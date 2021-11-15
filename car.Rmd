@@ -2,7 +2,9 @@
 title: "car"
 author: "Carbone Giorgio, Scuri Gianluca, Gazzola Michele"
 date: "12/11/2021"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -30,23 +32,15 @@ plot(pressure)
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 
-
-
-
-
-
-
-
-
-
 # Importazione librerie
-```{r importazione librerie}
+```{r importazione librerie, include=FALSE}
 library(readr)
+data_path <- "https://raw.githubusercontent.com/giocoal/Progetto_FoPaS/main/Car%20details%20v3.csv?token=ATGDIWTFWBAYMSALU2PY2NDBSLKYO"
 ```
 
 # Lettura Dataset
 ```{r importazione }
-data_path <- "https://raw.githubusercontent.com/giocoal/Progetto_FoPaS/main/Car%20details%20v3.csv?token=ATGDIWUDFKA4XEOC7DMRUXLBSLHFQ"
+
 car <- read_csv(data_path)
 View(car)
 ```
@@ -69,5 +63,5 @@ for (i in names(car)) {
 
 # Missing Value
 ```{r missing value}
-sum(is.na(car$))
+#sum(is.na(car$))
 ```
