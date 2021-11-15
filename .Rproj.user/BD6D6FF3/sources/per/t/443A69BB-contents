@@ -46,8 +46,8 @@ library(readr)
 
 # Lettura Dataset
 ```{r importazione }
-#data_path <- "https://www.kaggle.com/nehalbirla/vehicle-dataset-from-cardekho?select=Car+details+v3.csv"
-car <- read.csv("Car details v3.csv", header = T)
+data_path <- "https://raw.githubusercontent.com/giocoal/Progetto_FoPaS/main/Car%20details%20v3.csv?token=ATGDIWUDFKA4XEOC7DMRUXLBSLHFQ"
+car <- read_csv(data_path)
 View(car)
 ```
 
