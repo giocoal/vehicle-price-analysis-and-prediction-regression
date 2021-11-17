@@ -28,7 +28,7 @@ summary(cars)
 # Importazione librerie
 ```{r importazione librerie, include=FALSE}
 library(readr)
-data_path <- "https://raw.githubusercontent.com/giocoal/Progetto_FoPaS/main/Car%20details%20v3.csv?token=ATGDIWTFWBAYMSALU2PY2NDBSLKYO"
+data_path <- "https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv"
 ```
 
 # Lettura Dataset
