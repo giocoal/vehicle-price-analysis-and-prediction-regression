@@ -28,7 +28,12 @@ summary(car)
 ```
 - Il dataset ha 8123 unità statistiche e 13 attributi
 - La variabile target scelta è selling_price
-
+AAAA
+AAAAA
+AAAA
+AAAA
+AAA
+AAA
 # Missing Value
 ``` {r Missing Values}
 for (i in names(car)) {
