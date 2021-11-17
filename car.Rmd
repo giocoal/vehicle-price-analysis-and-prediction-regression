@@ -14,20 +14,22 @@ library(readr)
 ```
 
 # Lettura Dataset
+- Vengono assegnati i fase di lettura i tipi corretti ad ogni variabile
+- Alcune variabili presentano l'unità di misura espressa nel valore, vengono 
+quindi temporanemanente definiti come stringhe
 ```{r importazione }
 data_path <- "https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv"
-car <- read_csv(data_path)
-head(car)
+car <- read_csv(data_path, col_types = 'ciiiffff????i')
+head(car, )
 ```
 
 # Fase di osservazione del dataset
 ``` {r lettura}
 dim(car)
-str(car)
+str(car, give.attr = F)
 summary(car)
 ```
 - Il dataset ha 8123 unità statistiche e 13 attributi
-- La variabile target scelta è selling_price
 
 # Missing Value
 ``` {r Missing Values}
@@ -37,8 +39,6 @@ for (i in names(car)) {
 }
 ```
 
-
-# Missing Value
-```{r missing value}
-#sum(is.na(car$))
+```{r }
+x <- 1
 ```
