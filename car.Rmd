@@ -37,10 +37,6 @@ for (i in names(car)) {
 }
 ```
 
-NO GREEN PASS!
-NO GREEN PASS!
-NO GREEN PASS!
-NO GREEN PASS!
 
 # Missing Value
 ```{r missing value}
