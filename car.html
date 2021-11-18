@@ -180,70 +180,90 @@ pre code {
 </div>
 <div id="lettura-dataset" class="section level1">
 <h1>Lettura Dataset</h1>
+<ul>
+<li>Vengono assegnati i fase di lettura i tipi corretti ad ogni variabile</li>
+<li>Alcune variabili presentano l’unità di misura espressa nel valore, vengono quindi temporanemanente definiti come stringhe</li>
+</ul>
 <pre class="r"><code>data_path &lt;- &quot;https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv&quot;
-car &lt;- read_csv(data_path)</code></pre>
-<pre><code>## Rows: 8128 Columns: 13</code></pre>
-<pre><code>## -- Column specification --------------------------------------------------------
-## Delimiter: &quot;,&quot;
-## chr (9): name, fuel, seller_type, transmission, owner, mileage, engine, max_...
-## dbl (4): year, selling_price, km_driven, seats</code></pre>
-<pre><code>## 
-## i Use `spec()` to retrieve the full column specification for this data.
-## i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>head(car)</code></pre>
-<pre><code>## # A tibble: 6 x 13
-##   name        year selling_price km_driven fuel  seller_type transmission owner 
-##   &lt;chr&gt;      &lt;dbl&gt;         &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;        &lt;chr&gt; 
-## 1 Maruti Sw~  2014        450000    145500 Dies~ Individual  Manual       First~
-## 2 Skoda Rap~  2014        370000    120000 Dies~ Individual  Manual       Secon~
-## 3 Honda Cit~  2006        158000    140000 Petr~ Individual  Manual       Third~
-## 4 Hyundai i~  2010        225000    127000 Dies~ Individual  Manual       First~
-## 5 Maruti Sw~  2007        130000    120000 Petr~ Individual  Manual       First~
-## 6 Hyundai X~  2017        440000     45000 Petr~ Individual  Manual       First~
-## # ... with 5 more variables: mileage &lt;chr&gt;, engine &lt;chr&gt;, max_power &lt;chr&gt;,
-## #   torque &lt;chr&gt;, seats &lt;dbl&gt;</code></pre>
+car &lt;- read_csv(data_path, col_types = &#39;ciiiffff????i&#39;)
+print.data.frame(head(car))</code></pre>
+<pre><code>##                            name year selling_price km_driven   fuel seller_type
+## 1        Maruti Swift Dzire VDI 2014        450000    145500 Diesel  Individual
+## 2  Skoda Rapid 1.5 TDI Ambition 2014        370000    120000 Diesel  Individual
+## 3      Honda City 2017-2020 EXi 2006        158000    140000 Petrol  Individual
+## 4     Hyundai i20 Sportz Diesel 2010        225000    127000 Diesel  Individual
+## 5        Maruti Swift VXI BSIII 2007        130000    120000 Petrol  Individual
+## 6 Hyundai Xcent 1.2 VTVT E Plus 2017        440000     45000 Petrol  Individual
+##   transmission        owner    mileage  engine  max_power
+## 1       Manual  First Owner  23.4 kmpl 1248 CC     74 bhp
+## 2       Manual Second Owner 21.14 kmpl 1498 CC 103.52 bhp
+## 3       Manual  Third Owner  17.7 kmpl 1497 CC     78 bhp
+## 4       Manual  First Owner  23.0 kmpl 1396 CC     90 bhp
+## 5       Manual  First Owner  16.1 kmpl 1298 CC   88.2 bhp
+## 6       Manual  First Owner 20.14 kmpl 1197 CC  81.86 bhp
+##                     torque seats
+## 1           190Nm@ 2000rpm     5
+## 2      250Nm@ 1500-2500rpm     5
+## 3    12.7@ 2,700(kgm@ rpm)     5
+## 4 22.4 kgm at 1750-2750rpm     5
+## 5    11.5@ 4,500(kgm@ rpm)     5
+## 6        113.75nm@ 4000rpm     5</code></pre>
 </div>
-<div id="visione-dataset" class="section level1">
-<h1>Visione dataset</h1>
+<div id="fase-di-osservazione-del-dataset" class="section level1">
+<h1>Fase di osservazione del dataset</h1>
 <pre class="r"><code>dim(car)</code></pre>
 <pre><code>## [1] 8128   13</code></pre>
-<pre class="r"><code>names(car)</code></pre>
-<pre><code>##  [1] &quot;name&quot;          &quot;year&quot;          &quot;selling_price&quot; &quot;km_driven&quot;    
-##  [5] &quot;fuel&quot;          &quot;seller_type&quot;   &quot;transmission&quot;  &quot;owner&quot;        
-##  [9] &quot;mileage&quot;       &quot;engine&quot;        &quot;max_power&quot;     &quot;torque&quot;       
-## [13] &quot;seats&quot;</code></pre>
-<pre class="r"><code>str(car)</code></pre>
+<pre class="r"><code>str(car, give.attr = F)</code></pre>
 <pre><code>## spec_tbl_df [8,128 x 13] (S3: spec_tbl_df/tbl_df/tbl/data.frame)
 ##  $ name         : chr [1:8128] &quot;Maruti Swift Dzire VDI&quot; &quot;Skoda Rapid 1.5 TDI Ambition&quot; &quot;Honda City 2017-2020 EXi&quot; &quot;Hyundai i20 Sportz Diesel&quot; ...
-##  $ year         : num [1:8128] 2014 2014 2006 2010 2007 ...
-##  $ selling_price: num [1:8128] 450000 370000 158000 225000 130000 440000 96000 45000 350000 200000 ...
-##  $ km_driven    : num [1:8128] 145500 120000 140000 127000 120000 ...
-##  $ fuel         : chr [1:8128] &quot;Diesel&quot; &quot;Diesel&quot; &quot;Petrol&quot; &quot;Diesel&quot; ...
-##  $ seller_type  : chr [1:8128] &quot;Individual&quot; &quot;Individual&quot; &quot;Individual&quot; &quot;Individual&quot; ...
-##  $ transmission : chr [1:8128] &quot;Manual&quot; &quot;Manual&quot; &quot;Manual&quot; &quot;Manual&quot; ...
-##  $ owner        : chr [1:8128] &quot;First Owner&quot; &quot;Second Owner&quot; &quot;Third Owner&quot; &quot;First Owner&quot; ...
+##  $ year         : int [1:8128] 2014 2014 2006 2010 2007 2017 2007 2001 2011 2013 ...
+##  $ selling_price: int [1:8128] 450000 370000 158000 225000 130000 440000 96000 45000 350000 200000 ...
+##  $ km_driven    : int [1:8128] 145500 120000 140000 127000 120000 45000 175000 5000 90000 169000 ...
+##  $ fuel         : Factor w/ 4 levels &quot;Diesel&quot;,&quot;Petrol&quot;,..: 1 1 2 1 2 2 3 2 1 1 ...
+##  $ seller_type  : Factor w/ 3 levels &quot;Individual&quot;,&quot;Dealer&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ transmission : Factor w/ 2 levels &quot;Manual&quot;,&quot;Automatic&quot;: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ owner        : Factor w/ 5 levels &quot;First Owner&quot;,..: 1 2 3 1 1 1 1 2 1 1 ...
 ##  $ mileage      : chr [1:8128] &quot;23.4 kmpl&quot; &quot;21.14 kmpl&quot; &quot;17.7 kmpl&quot; &quot;23.0 kmpl&quot; ...
 ##  $ engine       : chr [1:8128] &quot;1248 CC&quot; &quot;1498 CC&quot; &quot;1497 CC&quot; &quot;1396 CC&quot; ...
 ##  $ max_power    : chr [1:8128] &quot;74 bhp&quot; &quot;103.52 bhp&quot; &quot;78 bhp&quot; &quot;90 bhp&quot; ...
 ##  $ torque       : chr [1:8128] &quot;190Nm@ 2000rpm&quot; &quot;250Nm@ 1500-2500rpm&quot; &quot;12.7@ 2,700(kgm@ rpm)&quot; &quot;22.4 kgm at 1750-2750rpm&quot; ...
-##  $ seats        : num [1:8128] 5 5 5 5 5 5 5 4 5 5 ...
-##  - attr(*, &quot;spec&quot;)=
-##   .. cols(
-##   ..   name = col_character(),
-##   ..   year = col_double(),
-##   ..   selling_price = col_double(),
-##   ..   km_driven = col_double(),
-##   ..   fuel = col_character(),
-##   ..   seller_type = col_character(),
-##   ..   transmission = col_character(),
-##   ..   owner = col_character(),
-##   ..   mileage = col_character(),
-##   ..   engine = col_character(),
-##   ..   max_power = col_character(),
-##   ..   torque = col_character(),
-##   ..   seats = col_double()
-##   .. )
-##  - attr(*, &quot;problems&quot;)=&lt;externalptr&gt;</code></pre>
+##  $ seats        : int [1:8128] 5 5 5 5 5 5 5 4 5 5 ...</code></pre>
+<pre class="r"><code>summary(car)</code></pre>
+<pre><code>##      name                year      selling_price        km_driven      
+##  Length:8128        Min.   :1983   Min.   :   29999   Min.   :      1  
+##  Class :character   1st Qu.:2011   1st Qu.:  254999   1st Qu.:  35000  
+##  Mode  :character   Median :2015   Median :  450000   Median :  60000  
+##                     Mean   :2014   Mean   :  638272   Mean   :  69820  
+##                     3rd Qu.:2017   3rd Qu.:  675000   3rd Qu.:  98000  
+##                     Max.   :2020   Max.   :10000000   Max.   :2360457  
+##                                                                        
+##      fuel                seller_type      transmission 
+##  Diesel:4402   Individual      :6766   Manual   :7078  
+##  Petrol:3631   Dealer          :1126   Automatic:1050  
+##  LPG   :  38   Trustmark Dealer: 236                   
+##  CNG   :  57                                           
+##                                                        
+##                                                        
+##                                                        
+##                   owner        mileage             engine         
+##  First Owner         :5289   Length:8128        Length:8128       
+##  Second Owner        :2105   Class :character   Class :character  
+##  Third Owner         : 555   Mode  :character   Mode  :character  
+##  Fourth &amp; Above Owner: 174                                        
+##  Test Drive Car      :   5                                        
+##                                                                   
+##                                                                   
+##   max_power            torque              seats       
+##  Length:8128        Length:8128        Min.   : 2.000  
+##  Class :character   Class :character   1st Qu.: 5.000  
+##  Mode  :character   Mode  :character   Median : 5.000  
+##                                        Mean   : 5.417  
+##                                        3rd Qu.: 5.000  
+##                                        Max.   :14.000  
+##                                        NA&#39;s   :221</code></pre>
+<ul>
+<li>Il dataset ha 8123 unità statistiche e 13 attributi</li>
+</ul>
 </div>
 <div id="missing-value" class="section level1">
 <h1>Missing Value</h1>
@@ -277,10 +297,7 @@ car &lt;- read_csv(data_path)</code></pre>
 ## [1] 222
 ## [1] &quot;seats&quot;
 ## [1] 221</code></pre>
-</div>
-<div id="missing-value-1" class="section level1">
-<h1>Missing Value</h1>
-<pre class="r"><code>#sum(is.na(car$))</code></pre>
+<pre class="r"><code>x &lt;- 1</code></pre>
 </div>
 
 

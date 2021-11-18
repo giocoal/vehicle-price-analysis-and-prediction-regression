@@ -20,7 +20,7 @@ quindi temporanemanente definiti come stringhe
 ```{r importazione }
 data_path <- "https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv"
 car <- read_csv(data_path, col_types = 'ciiiffff????i')
-head(car, )
+head(data.frame(car))
 ```
 
 # Fase di osservazione del dataset
@@ -39,6 +39,9 @@ for (i in names(car)) {
 }
 ```
 
-```{r }
-x <- 1
+```{r test}
+#strsplit("23.4   gnk", " ")
+#str_extract("Camaro Z28", "[0-9]+")
+str_extract("23.5 kmpl", "^[0-9]+//.*")
 ```
+
