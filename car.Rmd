@@ -31,16 +31,41 @@ summary(car)
 ```
 - Il dataset ha 8123 unità statistiche e 13 attributi
 
+
+# L'attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall'analisi
+```{r rimuovere colonna torque}
+```
+
+# Sistemo alcuni missing values che sono stati memorizzati come "zeri"
+```{r from 0 to NA}
+car$max_power[car$max_power == 0 | car$max_power == "bhp"] <- NA
+car$mileage[car$mileage == "0.0 kmpl"] <- NA
+```
+
 # Missing Value
 ``` {r Missing Values}
 for (i in names(car)) {
   print(i)
   print(sum(is.na(car[i])))
 }
-```
 
-# Verifico che le unitá di misura di ogni singolo atributo siano uguali
+#numero di righe con almeno un NA
+sum(!complete.cases(car))
+
+#qui bisogna aggiungere la funzione per rimuovere le righe
+```
+Trattandosi di 239 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
+
+
+# Verifico che le unitá di misura di ogni singolo attributo siano consistenti tra loro
 ```{r Controllo unita di misura}
-for
+all(grepl("kmpl", car$mileage) == !is.na(car$mileage))
+#Viene FALSE perché le macchine a GPL misurano il mileage in km/kg
+
+all(grepl("CC", car$engine) == !is.na(car$engine))
+#viene TRUE quindi sono tutti consistenti
+
+all((grepl("bhp", car$max_power)) == !is.na(car$max_power))
+#viene TRUE quindi sono tutti consistenti
 ```
 
