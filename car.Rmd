@@ -37,8 +37,8 @@ for (i in names(car)) {
 }
 ```
 
-
-# Missing Value
-```{r missing value}
-#sum(is.na(car$))
+# Verifico che le unitá di misura di ogni singolo atributo siano uguali
+```{r Controllo unita di misura}
+for
 ```
+
