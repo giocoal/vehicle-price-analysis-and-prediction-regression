@@ -15,7 +15,7 @@ library(readr)
 
 # Lettura Dataset
 - Vengono assegnati i fase di lettura i tipi corretti ad ogni variabile
-- Alcune variabili presentano l'unità di misura espressa nel valore, vengono 
+- Alcune variabili presentano l'unità di misura espressa nel valore, vengono
 quindi temporanemanente definiti come stringhe
 ```{r importazione }
 data_path <- "https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv"
@@ -31,12 +31,42 @@ summary(car)
 ```
 - Il dataset ha 8123 unità statistiche e 13 attributi
 
+
+# L'attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall'analisi
+```{r rimuovere colonna torque}
+```
+
+# Sistemo alcuni missing values che sono stati memorizzati come "zeri"
+```{r from 0 to NA}
+car$max_power[car$max_power == 0 | car$max_power == "bhp"] <- NA
+car$mileage[car$mileage == "0.0 kmpl"] <- NA
+```
+
 # Missing Value
 ``` {r Missing Values}
 for (i in names(car)) {
   print(i)
   print(sum(is.na(car[i])))
 }
+
+#numero di righe con almeno un NA
+sum(!complete.cases(car))
+
+#qui bisogna aggiungere la funzione per rimuovere le righe
+```
+Trattandosi di 239 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
+
+
+# Verifico che le unitá di misura di ogni singolo attributo siano consistenti tra loro
+```{r Controllo unita di misura}
+all(grepl("kmpl", car$mileage) == !is.na(car$mileage))
+#Viene FALSE perché le macchine a GPL misurano il mileage in km/kg
+
+all(grepl("CC", car$engine) == !is.na(car$engine))
+#viene TRUE quindi sono tutti consistenti
+
+all((grepl("bhp", car$max_power)) == !is.na(car$max_power))
+#viene TRUE quindi sono tutti consistenti
 ```
 
 ```{r test}
@@ -44,4 +74,3 @@ for (i in names(car)) {
 #str_extract("Camaro Z28", "[0-9]+")
 str_extract("23.5 kmpl", "^[0-9]+//.*")
 ```
-
