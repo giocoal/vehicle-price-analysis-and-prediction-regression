@@ -11,22 +11,23 @@ output:
 - Importo le librerie necessarie all'esecuzione del codice
 ```{r importazione librerie e opzioni di rendering, include=FALSE}
 library(readr)
-library(lemon)
-knit_print.data.frame <- lemon_print
+#library(printr)
+#library(lemon)
+#knit_print.data.frame <- lemon_print
 ```
 
 # Lettura Dataset
 - Vengono assegnati i fase di lettura i tipi corretti ad ogni variabile
 - Alcune variabili presentano l'unità di misura espressa nel valore, vengono
 quindi temporanemanente definiti come stringhe
-```{r importazione, render=lemon_print}
+```{r importazione}
 data_path <- "https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv"
 car <- read_csv(data_path, col_types = 'cidiffff????i')
 head(data.frame(car))
 ```
 
 # Fase di osservazione del dataset
-``` {r lettura, render=lemon_print}
+``` {r lettura}
 #dim(car)
 str(car, give.attr = F)
 summary(car)
