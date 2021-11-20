@@ -185,8 +185,9 @@ pre code {
 <li>Alcune variabili presentano l’unità di misura espressa nel valore, vengono quindi temporanemanente definiti come stringhe</li>
 </ul>
 <pre class="r"><code>data_path &lt;- &quot;https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv&quot;
-car &lt;- read_csv(data_path, col_types = &#39;ciiiffff????i&#39;)
-head(data.frame(car))</code></pre>
+car &lt;- read_csv(data_path, col_types = &#39;ciiiffff????i&#39;)</code></pre>
+<pre><code>## `curl` package not installed, falling back to using `url()`</code></pre>
+<pre class="r"><code>head(data.frame(car))</code></pre>
 <table style="width:100%;">
 <colgroup>
 <col width="18%" />
@@ -477,9 +478,10 @@ str(car, give.attr = F)</code></pre>
 <ul>
 <li>Il dataset ha 8123 unità statistiche e 13 attributi</li>
 </ul>
+<div id="lattributo-torque-in-quanto-calcolato-a-rpm-diversi-per-ogni-veicolomarca-lo-escludiamo-dallanalisi" class="section level2">
+<h2>L’attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall’analisi</h2>
+<pre class="r"><code>car &lt;- car[,-12]</code></pre>
 </div>
-<div id="lattributo-torque-in-quanto-calcolato-a-rpm-diversi-per-ogni-veicolomarca-lo-escludiamo-dallanalisi" class="section level1">
-<h1>L’attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall’analisi</h1>
 </div>
 <div id="sistemo-alcuni-missing-values-che-sono-stati-memorizzati-come-zeri" class="section level1">
 <h1>Sistemo alcuni missing values che sono stati memorizzati come “zeri”</h1>
@@ -513,8 +515,6 @@ car$mileage[car$mileage == &quot;0.0 kmpl&quot;] &lt;- NA</code></pre>
 ## [1] &quot;engine&quot;
 ## [1] 221
 ## [1] &quot;max_power&quot;
-## [1] 222
-## [1] &quot;torque&quot;
 ## [1] 222
 ## [1] &quot;seats&quot;
 ## [1] 221</code></pre>
