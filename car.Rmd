@@ -88,7 +88,7 @@ all((grepl("bhp", car$max_power)) == !is.na(car$max_power))
 ```
 
 # istogrammi e box plot
-``` {r istogrammi e box plot}
+#``` {r istogrammi e box plot}
 #boxplot
 for (i in 1:ncol(car)) {
   boxplot(car[,i], main = colnames(car)[i])
