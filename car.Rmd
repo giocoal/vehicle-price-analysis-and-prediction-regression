@@ -37,9 +37,10 @@ summary(car)
 
 # L'attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall'analisi
 ```{r rimuovere colonna torque}
+car <- car[,-12]
 ```
 
-# Sistemo alcuni missing values che sono stati memorizzati come "zeri"
+# Sistemo alcuni missing values che sono stati memorizzati come "zeri" (da mettere nella sez outlier?)
 ```{r from 0 to NA}
 car$max_power[car$max_power == 0 | car$max_power == "bhp"] <- NA
 car$mileage[car$mileage == "0.0 kmpl"] <- NA
@@ -55,9 +56,11 @@ for (i in names(car)) {
 #numero di righe con almeno un NA
 sum(!complete.cases(car))
 
+#Trattandosi di 239 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
+
 #qui bisogna aggiungere la funzione per rimuovere le righe
+car <- car[-which(!complete.cases(car)),]
 ```
-Trattandosi di 239 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
 
 
 # Verifico che le unitá di misura di ogni singolo attributo siano consistenti tra loro
@@ -76,4 +79,20 @@ all((grepl("bhp", car$max_power)) == !is.na(car$max_power))
 #strsplit("23.4   gnk", " ")
 #str_extract("Camaro Z28", "[0-9]+")
 #str_extract("23.5 kmpl", "^[0-9]+//.*")
+
+
+```
+
+# istogrammi e box plot
+``` {r istogrammi e box plot}
+#boxplot
+for (i in 1:ncol(car)) {
+  boxplot(car[,i], main = colnames(car)[i])
+}
+
+
+#istogrammi
+for (i in 1:ncol(car)) {
+  hist(car[,i], main = colnames(car)[i])
+}
 ```
