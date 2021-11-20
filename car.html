@@ -187,132 +187,27 @@ pre code {
 <pre class="r"><code>data_path &lt;- &quot;https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv&quot;
 car &lt;- read_csv(data_path, col_types = &#39;ciiiffff????i&#39;)
 head(data.frame(car))</code></pre>
-<table style="width:100%;">
-<colgroup>
-<col width="18%" />
-<col width="3%" />
-<col width="8%" />
-<col width="6%" />
-<col width="4%" />
-<col width="7%" />
-<col width="7%" />
-<col width="7%" />
-<col width="6%" />
-<col width="4%" />
-<col width="6%" />
-<col width="15%" />
-<col width="3%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">name</th>
-<th align="right">year</th>
-<th align="right">selling_price</th>
-<th align="right">km_driven</th>
-<th align="left">fuel</th>
-<th align="left">seller_type</th>
-<th align="left">transmission</th>
-<th align="left">owner</th>
-<th align="left">mileage</th>
-<th align="left">engine</th>
-<th align="left">max_power</th>
-<th align="left">torque</th>
-<th align="right">seats</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">Maruti Swift Dzire VDI</td>
-<td align="right">2014</td>
-<td align="right">450000</td>
-<td align="right">145500</td>
-<td align="left">Diesel</td>
-<td align="left">Individual</td>
-<td align="left">Manual</td>
-<td align="left">First Owner</td>
-<td align="left">23.4 kmpl</td>
-<td align="left">1248 CC</td>
-<td align="left">74 bhp</td>
-<td align="left">190Nm@ 2000rpm</td>
-<td align="right">5</td>
-</tr>
-<tr class="even">
-<td align="left">Skoda Rapid 1.5 TDI Ambition</td>
-<td align="right">2014</td>
-<td align="right">370000</td>
-<td align="right">120000</td>
-<td align="left">Diesel</td>
-<td align="left">Individual</td>
-<td align="left">Manual</td>
-<td align="left">Second Owner</td>
-<td align="left">21.14 kmpl</td>
-<td align="left">1498 CC</td>
-<td align="left">103.52 bhp</td>
-<td align="left">250Nm@ 1500-2500rpm</td>
-<td align="right">5</td>
-</tr>
-<tr class="odd">
-<td align="left">Honda City 2017-2020 EXi</td>
-<td align="right">2006</td>
-<td align="right">158000</td>
-<td align="right">140000</td>
-<td align="left">Petrol</td>
-<td align="left">Individual</td>
-<td align="left">Manual</td>
-<td align="left">Third Owner</td>
-<td align="left">17.7 kmpl</td>
-<td align="left">1497 CC</td>
-<td align="left">78 bhp</td>
-<td align="left">12.7@ 2,700(kgm@ rpm)</td>
-<td align="right">5</td>
-</tr>
-<tr class="even">
-<td align="left">Hyundai i20 Sportz Diesel</td>
-<td align="right">2010</td>
-<td align="right">225000</td>
-<td align="right">127000</td>
-<td align="left">Diesel</td>
-<td align="left">Individual</td>
-<td align="left">Manual</td>
-<td align="left">First Owner</td>
-<td align="left">23.0 kmpl</td>
-<td align="left">1396 CC</td>
-<td align="left">90 bhp</td>
-<td align="left">22.4 kgm at 1750-2750rpm</td>
-<td align="right">5</td>
-</tr>
-<tr class="odd">
-<td align="left">Maruti Swift VXI BSIII</td>
-<td align="right">2007</td>
-<td align="right">130000</td>
-<td align="right">120000</td>
-<td align="left">Petrol</td>
-<td align="left">Individual</td>
-<td align="left">Manual</td>
-<td align="left">First Owner</td>
-<td align="left">16.1 kmpl</td>
-<td align="left">1298 CC</td>
-<td align="left">88.2 bhp</td>
-<td align="left">11.5@ 4,500(kgm@ rpm)</td>
-<td align="right">5</td>
-</tr>
-<tr class="even">
-<td align="left">Hyundai Xcent 1.2 VTVT E Plus</td>
-<td align="right">2017</td>
-<td align="right">440000</td>
-<td align="right">45000</td>
-<td align="left">Petrol</td>
-<td align="left">Individual</td>
-<td align="left">Manual</td>
-<td align="left">First Owner</td>
-<td align="left">20.14 kmpl</td>
-<td align="left">1197 CC</td>
-<td align="left">81.86 bhp</td>
-<td align="left">113.75nm@ 4000rpm</td>
-<td align="right">5</td>
-</tr>
-</tbody>
-</table>
+<pre><code>##                            name year selling_price km_driven   fuel seller_type
+## 1        Maruti Swift Dzire VDI 2014        450000    145500 Diesel  Individual
+## 2  Skoda Rapid 1.5 TDI Ambition 2014        370000    120000 Diesel  Individual
+## 3      Honda City 2017-2020 EXi 2006        158000    140000 Petrol  Individual
+## 4     Hyundai i20 Sportz Diesel 2010        225000    127000 Diesel  Individual
+## 5        Maruti Swift VXI BSIII 2007        130000    120000 Petrol  Individual
+## 6 Hyundai Xcent 1.2 VTVT E Plus 2017        440000     45000 Petrol  Individual
+##   transmission        owner    mileage  engine  max_power
+## 1       Manual  First Owner  23.4 kmpl 1248 CC     74 bhp
+## 2       Manual Second Owner 21.14 kmpl 1498 CC 103.52 bhp
+## 3       Manual  Third Owner  17.7 kmpl 1497 CC     78 bhp
+## 4       Manual  First Owner  23.0 kmpl 1396 CC     90 bhp
+## 5       Manual  First Owner  16.1 kmpl 1298 CC   88.2 bhp
+## 6       Manual  First Owner 20.14 kmpl 1197 CC  81.86 bhp
+##                     torque seats
+## 1           190Nm@ 2000rpm     5
+## 2      250Nm@ 1500-2500rpm     5
+## 3    12.7@ 2,700(kgm@ rpm)     5
+## 4 22.4 kgm at 1750-2750rpm     5
+## 5    11.5@ 4,500(kgm@ rpm)     5
+## 6        113.75nm@ 4000rpm     5</code></pre>
 </div>
 <div id="fase-di-osservazione-del-dataset" class="section level1">
 <h1>Fase di osservazione del dataset</h1>
@@ -333,147 +228,38 @@ str(car, give.attr = F)</code></pre>
 ##  $ torque       : chr [1:8128] &quot;190Nm@ 2000rpm&quot; &quot;250Nm@ 1500-2500rpm&quot; &quot;12.7@ 2,700(kgm@ rpm)&quot; &quot;22.4 kgm at 1750-2750rpm&quot; ...
 ##  $ seats        : int [1:8128] 5 5 5 5 5 5 5 4 5 5 ...</code></pre>
 <pre class="r"><code>summary(car)</code></pre>
-<table>
-<colgroup>
-<col width="7%" />
-<col width="5%" />
-<col width="7%" />
-<col width="7%" />
-<col width="5%" />
-<col width="9%" />
-<col width="7%" />
-<col width="11%" />
-<col width="7%" />
-<col width="7%" />
-<col width="7%" />
-<col width="7%" />
-<col width="6%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">name</th>
-<th align="left">year</th>
-<th align="left">selling_price</th>
-<th align="left">km_driven</th>
-<th align="left">fuel</th>
-<th align="left">seller_type</th>
-<th align="left">transmission</th>
-<th align="left">owner</th>
-<th align="left">mileage</th>
-<th align="left">engine</th>
-<th align="left">max_power</th>
-<th align="left">torque</th>
-<th align="left">seats</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">Length:8128</td>
-<td align="left">Min. :1983</td>
-<td align="left">Min. : 29999</td>
-<td align="left">Min. : 1</td>
-<td align="left">Diesel:4402</td>
-<td align="left">Individual :6766</td>
-<td align="left">Manual :7078</td>
-<td align="left">First Owner :5289</td>
-<td align="left">Length:8128</td>
-<td align="left">Length:8128</td>
-<td align="left">Length:8128</td>
-<td align="left">Length:8128</td>
-<td align="left">Min. : 2.000</td>
-</tr>
-<tr class="even">
-<td align="left">Class :character</td>
-<td align="left">1st Qu.:2011</td>
-<td align="left">1st Qu.: 254999</td>
-<td align="left">1st Qu.: 35000</td>
-<td align="left">Petrol:3631</td>
-<td align="left">Dealer :1126</td>
-<td align="left">Automatic:1050</td>
-<td align="left">Second Owner :2105</td>
-<td align="left">Class :character</td>
-<td align="left">Class :character</td>
-<td align="left">Class :character</td>
-<td align="left">Class :character</td>
-<td align="left">1st Qu.: 5.000</td>
-</tr>
-<tr class="odd">
-<td align="left">Mode :character</td>
-<td align="left">Median :2015</td>
-<td align="left">Median : 450000</td>
-<td align="left">Median : 60000</td>
-<td align="left">LPG : 38</td>
-<td align="left">Trustmark Dealer: 236</td>
-<td align="left"></td>
-<td align="left">Third Owner : 555</td>
-<td align="left">Mode :character</td>
-<td align="left">Mode :character</td>
-<td align="left">Mode :character</td>
-<td align="left">Mode :character</td>
-<td align="left">Median : 5.000</td>
-</tr>
-<tr class="even">
-<td align="left"></td>
-<td align="left">Mean :2014</td>
-<td align="left">Mean : 638272</td>
-<td align="left">Mean : 69820</td>
-<td align="left">CNG : 57</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">Fourth &amp; Above Owner: 174</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">Mean : 5.417</td>
-</tr>
-<tr class="odd">
-<td align="left"></td>
-<td align="left">3rd Qu.:2017</td>
-<td align="left">3rd Qu.: 675000</td>
-<td align="left">3rd Qu.: 98000</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">Test Drive Car : 5</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">3rd Qu.: 5.000</td>
-</tr>
-<tr class="even">
-<td align="left"></td>
-<td align="left">Max. :2020</td>
-<td align="left">Max. :10000000</td>
-<td align="left">Max. :2360457</td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left">Max. :14.000</td>
-</tr>
-<tr class="odd">
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"></td>
-<td align="left"><code>NA</code>s :221</td>
-</tr>
-</tbody>
-</table>
+<pre><code>##      name                year      selling_price        km_driven      
+##  Length:8128        Min.   :1983   Min.   :   29999   Min.   :      1  
+##  Class :character   1st Qu.:2011   1st Qu.:  254999   1st Qu.:  35000  
+##  Mode  :character   Median :2015   Median :  450000   Median :  60000  
+##                     Mean   :2014   Mean   :  638272   Mean   :  69820  
+##                     3rd Qu.:2017   3rd Qu.:  675000   3rd Qu.:  98000  
+##                     Max.   :2020   Max.   :10000000   Max.   :2360457  
+##                                                                        
+##      fuel                seller_type      transmission 
+##  Diesel:4402   Individual      :6766   Manual   :7078  
+##  Petrol:3631   Dealer          :1126   Automatic:1050  
+##  LPG   :  38   Trustmark Dealer: 236                   
+##  CNG   :  57                                           
+##                                                        
+##                                                        
+##                                                        
+##                   owner        mileage             engine         
+##  First Owner         :5289   Length:8128        Length:8128       
+##  Second Owner        :2105   Class :character   Class :character  
+##  Third Owner         : 555   Mode  :character   Mode  :character  
+##  Fourth &amp; Above Owner: 174                                        
+##  Test Drive Car      :   5                                        
+##                                                                   
+##                                                                   
+##   max_power            torque              seats       
+##  Length:8128        Length:8128        Min.   : 2.000  
+##  Class :character   Class :character   1st Qu.: 5.000  
+##  Mode  :character   Mode  :character   Median : 5.000  
+##                                        Mean   : 5.417  
+##                                        3rd Qu.: 5.000  
+##                                        Max.   :14.000  
+##                                        NA&#39;s   :221</code></pre>
 <ul>
 <li>Il dataset ha 8123 unità statistiche e 13 attributi</li>
 </ul>
