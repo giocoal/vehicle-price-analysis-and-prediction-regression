@@ -21,7 +21,7 @@ knit_print.data.frame <- lemon_print
 quindi temporanemanente definiti come stringhe
 ```{r importazione, render=lemon_print}
 data_path <- "https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv"
-car <- read_csv(data_path, col_types = 'ciiiffff????i')
+car <- read_csv(data_path, col_types = 'cidiffff????i')
 head(data.frame(car))
 ```
 
@@ -34,9 +34,13 @@ summary(car)
 - Il dataset ha 8123 unità statistiche e 13 attributi
 
 
-# L'attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall'analisi
-```{r rimuovere colonna torque}
+# Sistemo colonne
+```{r sistemo colonne}
+#rimuovo torque perché specifico per ogni veicolo
 car <- car[,-12]
+
+#converto da centesimi di dollaro in dollari il selling price
+car$selling_price <- car$selling_price * 0.01
 ```
 
 # Sistemo alcuni missing values che sono stati memorizzati come "zeri" (da mettere nella sez outlier?)
