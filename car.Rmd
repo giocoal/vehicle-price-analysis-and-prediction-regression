@@ -8,7 +8,7 @@ output:
 ---
 
 ``` {r installazione pacchetti, include = FALSE}
-install.packages("tidyverse")
+#install.packages("tidyverse")
 ```
 ### Importazione librerie
 - Importo le librerie necessarie all'esecuzione del codice
@@ -16,6 +16,7 @@ install.packages("tidyverse")
 library(readr)
 library(tibble)
 library(dplyr)
+library(stringr)
 #library(printr)
 #library(lemon)
 #knit_print.data.frame <- lemon_print
@@ -65,7 +66,7 @@ sum(!complete.cases(car))
 #Trattandosi di 239 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
 
 #qui bisogna aggiungere la funzione per rimuovere le righe
-car <- car[-which(!complete.cases(car)),]
+#car <- car[-which(!complete.cases(car)),]
 ```
 
 
@@ -102,9 +103,15 @@ car['engine(CC)'] <- parse_number(car$engine)
 car['max_power(bhp)'] <- parse_number(car$max_power)
 # Elimino le colonne con unità di misura usando la funzione select() di dplyr
 car <- select(car, -c('mileage', 'engine', 'max_power'))
-view(car)
 ```
+### Creazione di una colonna contenente la marca dell'auto
+```{r colonna marca}
+# Uso la funzione word della libreria dplyr
+# Uso l'operatore pipes %>% di dplyr e la funzione add_column di tibble per 
+# aggiungere la nuova colonna dopo la colonna name
+car <- add_column(car, make = word(car$name, 1), .after = "name")
 
+```
 # istogrammi e box plot
 ``` {r istogrammi e box plot}
 #boxplot
