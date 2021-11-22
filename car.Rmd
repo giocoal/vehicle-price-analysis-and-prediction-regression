@@ -28,7 +28,7 @@ head(data.frame(car))
 
 # Fase di osservazione del dataset
 ``` {r lettura}
-#dim(car)
+dim(car)
 str(car, give.attr = F)
 summary(car)
 ```
