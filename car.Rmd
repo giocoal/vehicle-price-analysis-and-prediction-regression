@@ -9,6 +9,8 @@ output:
 
 ``` {r installazione pacchetti, include = FALSE}
 
+#ciao
+
 ```
 ### Importazione librerie
 - Importo le librerie necessarie all'esecuzione del codice
