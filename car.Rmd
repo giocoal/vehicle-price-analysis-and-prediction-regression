@@ -115,41 +115,56 @@ car <- select(car, -c('engine', 'max_power'))
 car <- add_column(car, make = factor(word(car$name, 1)), .after = "name")
 ```
 
-#### Missing Value Gio
+#### Missing Value
 ```{r missing value}
 # md.pattern (del pacchetto mice), è una funzione di visualizzazione molto utile
 # Permette di vedere la distribuzione di NA 
 # nonchè di classificare le righe in funzione del numero di NA che contengono
 md.pattern(car, rotate.names=TRUE)
-```
-```{r test}
-head(car)
-```
-# Missing Value
-``` {r Missing Values}
-for (i in names(car)) {
-  print(i)
-  print(sum(is.na(car[i])))
-}
-
-#numero di righe con almeno un NA
+#numero di righe con almeno un NA (coincide con quanto visto in md.pattern)
 sum(!complete.cases(car))
 
-#Trattandosi di 239 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
-
-#qui bisogna aggiungere la funzione per rimuovere le righe
-#car <- car[-which(!complete.cases(car)),]
+#Trattandosi di 222 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
+car <- car[-which(!complete.cases(car)),]
 ```
+#### Fase eplorativa 
+```{r osservo il dataset}
+class(car)
+dim(car)
+str(car)
+summary(car)
+```
+#### Correlazioni
+``` {r correlazioni}
+# Estrazione delle variabili numeriche:
+car_nums <- unlist(lapply(car, is.numeric))
+
+# Prendo un campione di osservazioni per rendere più agile la rappresentazione grafica:
+leggero <- car[sample(nrow(car), 500), ]
+
+# Matrice dei diagrammi di dispersione:
+pairs(leggero[, car_nums])
+cor(car[ ,car_nums])
+```
+
+
+#### Outliers
+
 # istogrammi e box plot
 ``` {r istogrammi e box plot, include = False}
 #boxplot
-for (i in 1:ncol(car)) {
-  boxplot(car[,i], main = colnames(car)[i])
-}
+#car_num <- select_if(car, is.numeric)
+#for (i in names(car_num))
+#boxplot(car_num)
+#for (i in 1:ncol(car)) {
+#  boxplot(car[,i], main = colnames(car)[i])
+#}
 
 
 #istogrammi
-for (i in 1:ncol(car)) {
-  hist(car[,i], main = colnames(car)[i])
+for (i in names(car_num)) {
+  hist(car_num[[i]], main = i)
 }
+
+
 ```
