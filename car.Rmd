@@ -8,13 +8,11 @@ output:
 ---
 
 ``` {r installazione pacchetti, include = FALSE}
-
-#ciao
-
 ```
 ### Importazione librerie
 - Importo le librerie necessarie all'esecuzione del codice
 ```{r importazione librerie e opzioni di rendering, include=FALSE}
+rm(list=ls())
 library(readr)
 library(tibble)
 library(dplyr)
@@ -60,7 +58,10 @@ I consumi delle auto con diverso combustibile non sono comparabili perchè i com
 car <- select(car, -c(torque,mileage))
 head(car)
 ```
-
+### Conversione unità di misura della variabile selling_price
+```{r da centesimo a dollaro}
+car$selling_price <- car$selling_price*0.01
+```
 
 # Sistemo alcuni missing values che sono stati memorizzati come "zeri" (da mettere nella sez outlier?)
 ```{r from 0 to NA}
@@ -137,34 +138,70 @@ summary(car)
 #### Correlazioni
 ``` {r correlazioni}
 # Estrazione delle variabili numeriche:
-car_nums <- unlist(lapply(car, is.numeric))
-
+car_nums_colnames <- unlist(lapply(car, is.numeric))
+car_num <- car[ , car_nums_colnames]
 # Prendo un campione di osservazioni per rendere più agile la rappresentazione grafica:
 leggero <- car[sample(nrow(car), 500), ]
 
 # Matrice dei diagrammi di dispersione:
-pairs(leggero[, car_nums])
-cor(car[ ,car_nums])
+pairs(leggero[, car_nums_colnames])
+cor(car[ ,car_nums_colnames])
 ```
 
 
-#### Outliers
+#### Analisi distribuzione variabili esplicative numeriche
 
 # istogrammi e box plot
-``` {r istogrammi e box plot, include = False}
-#boxplot
-#car_num <- select_if(car, is.numeric)
-#for (i in names(car_num))
-#boxplot(car_num)
-#for (i in 1:ncol(car)) {
-#  boxplot(car[,i], main = colnames(car)[i])
-#}
-
-
-#istogrammi
+``` {r istogrammi, include = False}
+#istogrammi 
+par(mfrow=c(2,3))
 for (i in names(car_num)) {
-  hist(car_num[[i]], main = i)
+  hist(car_num[[i]], xlab = i, main = '')
 }
+par(mfrow=c(1,1))
+```
+- year: asimmetria negativa
+- selling_price: asimmetria positiva, coda di destra molto lunga
+- km_driven: asimmetria positiva, coda di destra molto lunga
+- seats:
+- engine: 
+- max_power(bhp): leggera asimmetria positiva
 
+Provo a valutare la distribuzione logaritmica di alcune delle variabili numeriche
+asimmetriche
+``` {r istogrammi log, include = False}
+#istogrammi 
+par(mfrow=c(2,3))
+for (i in c('year','selling_price','km_driven','engine(CC)','max_power(bhp)')) {
+  hist(log(car_num[[i]]), xlab = i, main = '')
+}
+par(mfrow=c(1,1))
+```
+Tutte le variabili numeriche considerate, tranne yaer, sembrano assumere una distribuzione più simmetrica se applicata
+la trasformazione logaritmica
+```{r trasformazione logaritmica}
+'year'
+'selling_price'
+'km_driven'
+'engine(CC)'
+'max_power(bhp)'
+```
+### Valuto la presenza di outliers
+``` {r outliers, include = False}
+#Boxplot 
+par(mfrow=c(2,3))
+#summary(car_num)
+for (i in names(car_num)) {
+  boxplot(car_num[[i]], xlab = i, main = '')
+}
+par(mfrow=c(1,1))
+```
 
+``` {r boxplot log, include = False}
+#istogrammi 
+par(mfrow=c(2,2))
+for (i in c('selling_price','km_driven','engine(CC)','max_power(bhp)')) {
+  boxplot(log(car_num[[i]]), xlab = i, main = '')
+}
+par(mfrow=c(1,1))
 ```
