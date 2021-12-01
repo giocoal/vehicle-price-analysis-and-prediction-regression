@@ -62,6 +62,7 @@ head(car)
 
 # Sistemo alcuni missing values che sono stati memorizzati come "zeri" (da mettere nella sez outlier?)
 ```{r from 0 to NA}
+car$max_power[car$max_power == "bhp"] <- NA
 #car$max_power[car$max_power == 0 | car$max_power == "bhp"] <- NA
 #car$mileage[car$mileage == "0.0 kmpl"] <- NA
 ```
@@ -108,10 +109,8 @@ car <- select(car, -c('engine', 'max_power'))
 ### Creazione di una colonna contenente la marca dell'auto
 ```{r colonna marca}
 # Uso la funzione word della libreria dplyr
-# Uso l'operatore pipes %>% di dplyr e la funzione add_column di tibble per 
-# aggiungere la nuova colonna dopo la colonna name
-car <- add_column(car, make = word(car$name, 1), .after = "name")
-
+# la funzione add_column di tibble peraggiunge la nuova colonna dopo la colonna name
+car <- add_column(car, make = factor(word(car$name, 1)), .after = "name")
 ```
 
 #### Missing Value Gio
@@ -120,6 +119,9 @@ car <- add_column(car, make = word(car$name, 1), .after = "name")
 # Permette di vedere la distribuzione di NA 
 # nonchè di classificare le righe in funzione del numero di NA che contengono
 md.pattern(car, rotate.names=TRUE)
+```
+```{r test}
+head(car)
 ```
 # Missing Value
 ``` {r Missing Values}
