@@ -56,7 +56,7 @@ car$selling_price <- car$selling_price*0.01
 L'attributo max_power presenta dei missing value in cui però la cella non è vuota ma presenta la sola unità di misura 'bhp'
 
 ```{r from 0 to NA}
-car$max_power[car$max_power == "bhp"] <- NA
+car$max_power[car$max_power == 0 | car$max_power == "bhp"] <- NA
 ```
 
 #### Verifico che le unitá di misura di ogni singolo attributo siano consistenti tra loro
