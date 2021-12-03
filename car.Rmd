@@ -7,6 +7,13 @@ output:
   pdf_document: default
 ---
 
+<<<<<<< Updated upstream
+=======
+``` {r installazione pacchetti, include = FALSE}
+
+
+```
+>>>>>>> Stashed changes
 ### Importazione librerie
 
 ```{r importazione librerie e opzioni di rendering, include=FALSE}
