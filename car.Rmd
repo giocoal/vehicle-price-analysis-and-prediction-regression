@@ -104,7 +104,7 @@ car <- add_column(car, make = factor(word(car$name, 1)), .after = "name")
 
 ## Statistica descrittiva
 
-### Fase esplorativa 
+### Fase esplorativa
 
 ```{r lettura}
 str(car, give.attr = F)
@@ -116,34 +116,30 @@ summary(car)
 ```
 
 -   Il dataset ha 8123 unità statistiche e 13 attributi
+-   Individuiamo come variabile target la variabile quantitativa continua `selling_price`
 
-#### Missing Value
+### Missing Value
 
-```{r missing value}
+-   Dalla visualizzazione prodotta con l'ausilio della funzione `md.pattern` del pacchetto `mice` notiamo come:
+
+    -   una riga presenta un solo missing value
+
+    -   222 righe presentano tre missing value
+
+-   Essendo le righe contenenti `NA` circa il 3% del delle unità statistiche, decidiamo di rimuoverle
+
+```{r missing value, echo = c(3,6), results = False}
 # md.pattern (del pacchetto mice), è una funzione di visualizzazione molto utile
-# Permette di vedere la distribuzione di NA 
-# nonchè di classificare le righe in funzione del numero di NA che contengono
+# Permette di vedere la distribuzione di NA nel dataset
 md.pattern(car, rotate.names=TRUE)
 #numero di righe con almeno un NA (coincide con quanto visto in md.pattern)
-sum(!complete.cases(car))
-
-#Trattandosi di 222 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
+# sum(!complete.cases(car))
 car <- car[-which(!complete.cases(car)),]
 ```
 
-#### Correlazioni
+### Analisi Distribuzionale
 
-```{r correlazioni}
-# Estrazione delle variabili numeriche:
-car_nums_colnames <- unlist(lapply(car, is.numeric))
-car_num <- car[ , car_nums_colnames]
-# Prendo un campione di osservazioni per rendere più agile la rappresentazione grafica:
-leggero <- car[sample(nrow(car), 500), ]
-
-# Matrice dei diagrammi di dispersione:
-pairs(leggero[, car_nums_colnames])
-cor(car[ ,car_nums_colnames])
-```
+#### Analisi distribuzionale per visualizzazione
 
 #### Analisi distribuzione variabili esplicative numeriche
 
@@ -206,3 +202,19 @@ for (i in c('selling_price','km_driven','engine(CC)','max_power(bhp)')) {
 }
 par(mfrow=c(1,1))
 ```
+
+#### Correlazioni
+
+```{r correlazioni}
+# Estrazione delle variabili numeriche:
+car_nums_colnames <- unlist(lapply(car, is.numeric))
+car_num <- car[ , car_nums_colnames]
+# Prendo un campione di osservazioni per rendere più agile la rappresentazione grafica:
+leggero <- car[sample(nrow(car), 500), ]
+
+# Matrice dei diagrammi di dispersione:
+pairs(leggero[, car_nums_colnames])
+cor(car[ ,car_nums_colnames])
+```
+
+#### 
