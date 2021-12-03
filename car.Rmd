@@ -29,10 +29,9 @@ data_path <- "https://raw.githubusercontent.com/giocoal/datasets/main/Car%20deta
 car <- read_csv(data_path, col_types = 'ciiiffff????i')
 head(data.frame(car))
 View(car)
-#is_tibble(car) Verifico che il ds sia di tipo tibble
 ```
 
-# Fase di osservazione del dataset
+### Fase esplorativa 
 
 ```{r lettura}
 str(car, give.attr = F)
@@ -41,9 +40,11 @@ summary(car)
 
 -   Il dataset ha 8123 unità statistiche e 13 attributi
 
-### Scegliamo di non considerare i seguenti attributi
+## Cleaning del dataset
 
--   Scegliamo di non considerare la colonna mileage (consumi) perchè I consumi delle auto con diverso combustibile non sono comparabili perchè i combustibili hanno un diverso rapporto tra energia generata/unità di volume
+#### Scegliamo di non considerare i seguenti attributi
+
+-   Scegliamo di non considerare la colonna mileage (consumi) perchè I consumi delle auto con diverso combustibile non sono comparabili perchè i combustibili hanno un diverso rapporto energia generata/unità di volume
 -   L'attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall'analisi
 
 ```{r rimozione colonna torque e mileage}
@@ -51,27 +52,25 @@ car <- select(car, -c(torque,mileage))
 head(car)
 ```
 
-### Conversione unità di misura della variabile selling_price
+#### Conversione unità di misura della variabile selling_price
+
+Conversione dell'unità di misura del prezzo di vendita da centesimi di dollaro in dollaro
 
 ```{r da centesimo a dollaro}
 car$selling_price <- car$selling_price*0.01
 ```
 
-# Sistemo alcuni missing values che sono stati memorizzati come "zeri" (da mettere nella sez outlier?)
+#### Introduzione di NA per l'attributo max_power
+
+L'attributo max_power presenta dei missing value in cui però la cella non è vuota ma presenta la sola unità di misura 'bhp'
 
 ```{r from 0 to NA}
 car$max_power[car$max_power == "bhp"] <- NA
-#car$max_power[car$max_power == 0 | car$max_power == "bhp"] <- NA
-#car$mileage[car$mileage == "0.0 kmpl"] <- NA
 ```
 
-# Verifico che le unitá di misura di ogni singolo attributo siano consistenti tra loro
+#### Verifico che le unitá di misura di ogni singolo attributo siano consistenti tra loro
 
 ```{r Controllo unita di misura}
-#all(grepl("kmpl", car$mileage) == !is.na(car$mileage))
-#Viene FALSE perché:
-#le macchine a Gas di petrolio liquefatto (LPG) e quelle a Metano (CNG) misurano il mileage in km/kg
-
 all(grepl("CC", car$engine) == !is.na(car$engine))
 #viene TRUE quindi sono tutti consistenti
 
@@ -79,29 +78,16 @@ all((grepl("bhp", car$max_power)) == !is.na(car$max_power))
 #viene TRUE quindi sono tutti consistenti
 ```
 
-```{r conteggio km/kg vs kmpl, possibile ipotesi di eliminare le righe dei GPL e CNG}
-# Il numero di auto valore di mileage in kmpl è solo di 88 (contro 7802)
-#sum(grepl("kmpl", car$mileage))
-#sum(grepl("km/kg", car$mileage))
-# Valore coerente con il numero totale di auto a LPG e CNG (95, probabilmente la differenza sono na)
-#cat("Numero di auto LPG o CNG:", sum(table(car$fuel)[c(3, 4)]))
-# Propongo di non considerare le auto a gpl e cng, dato il numero esiguo di unità statistiche
-# e un possibile problema correlato al fatto che queste auto non siano sufficientemente rappresentate
-#car <- subset(car, fuel != "LPG" & fuel != "CNG")
-```
+max_power
 
-# Convesione nelle stringhe 'Valore Unità_Di_Misura' in valori numerici privi di udm
+#### Convesione degli attributi in cui i valori sono stringhe contenenti i valori accompagnati dall'unità di misura in valori numerici privi di unità di misura
+
+-   A tale scopo utiliziamo la fuznione
 
 ```{r Eliminazione unità di misura}
-# Creo un nuovo attributo dei soli valori privi di unità di misura
-# includo l'unità di misura nel nome della variabile
-# La funzione parse_number mantiene i NA tali e converte tutte quelle
-# celle prive di numeri in NA
-#car['mileage(kmpl)'] <- parse_number(car$mileage)
 car['engine(CC)'] <- parse_number(car$engine)
 car['max_power(bhp)'] <- parse_number(car$max_power)
 # Elimino le colonne con unità di misura usando la funzione select() di dplyr
-#car <- select(car, -c('mileage', 'engine', 'max_power'))
 car <- select(car, -c('engine', 'max_power'))
 # Alternativa è creare una colonna di fattori 0 e 1 che indicano l'unità di misura
 # Ma mi sembra un po' eccessivo dato il numero esiguo di unità statistiche
