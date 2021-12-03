@@ -7,33 +7,23 @@ output:
   pdf_document: default
 ---
 
-``` {r installazione pacchetti, include = FALSE}
-```
 ### Importazione librerie
-- Importo le librerie necessarie all'esecuzione del codice
+
 ```{r importazione librerie e opzioni di rendering, include=FALSE}
-rm(list=ls())
+
 library(readr)
 library(tibble)
 library(dplyr)
 library(stringr)
-
 library(mice)
-#library(caret)
-#library(ggcorrplot)
-#library(ggrepel)
-#library(gridExtra)
-#library(glmnet)
-#library(xgboost)
-#library(printr)
-#library(lemon)
-#knit_print.data.frame <- lemon_print
+
 ```
 
-# Lettura Dataset
-- Vengono assegnati i fase di lettura i tipi corretti ad ogni variabile
-- Alcune variabili presentano l'unità di misura espressa nel valore, vengono
-quindi temporanemanente definiti come stringhe
+### Lettura Dataset
+
+-   Vengono assegnati i fase di lettura i tipi corretti ad ogni variabile
+-   Alcune variabili presentano l'unità di misura espressa nel valore, vengono quindi temporanemanente definiti come stringhe
+
 ```{r importazione}
 data_path <- "https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv"
 car <- read_csv(data_path, col_types = 'ciiiffff????i')
@@ -43,35 +33,40 @@ View(car)
 ```
 
 # Fase di osservazione del dataset
-``` {r lettura}
+
+```{r lettura}
 str(car, give.attr = F)
 summary(car)
 ```
-- Il dataset ha 8123 unità statistiche e 13 attributi
+
+-   Il dataset ha 8123 unità statistiche e 13 attributi
 
 ### Scegliamo di non considerare i seguenti attributi
 
-- Scegliamo di non considerare la colonna mileage (consumi) perchè
-I consumi delle auto con diverso combustibile non sono comparabili perchè i combustibili hanno un diverso rapporto tra energia generata/unità di volume
-- L'attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall'analisi
+-   Scegliamo di non considerare la colonna mileage (consumi) perchè I consumi delle auto con diverso combustibile non sono comparabili perchè i combustibili hanno un diverso rapporto tra energia generata/unità di volume
+-   L'attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall'analisi
+
 ```{r rimozione colonna torque e mileage}
 car <- select(car, -c(torque,mileage))
 head(car)
 ```
+
 ### Conversione unità di misura della variabile selling_price
+
 ```{r da centesimo a dollaro}
 car$selling_price <- car$selling_price*0.01
 ```
 
 # Sistemo alcuni missing values che sono stati memorizzati come "zeri" (da mettere nella sez outlier?)
+
 ```{r from 0 to NA}
 car$max_power[car$max_power == "bhp"] <- NA
 #car$max_power[car$max_power == 0 | car$max_power == "bhp"] <- NA
 #car$mileage[car$mileage == "0.0 kmpl"] <- NA
 ```
 
-
 # Verifico che le unitá di misura di ogni singolo attributo siano consistenti tra loro
+
 ```{r Controllo unita di misura}
 #all(grepl("kmpl", car$mileage) == !is.na(car$mileage))
 #Viene FALSE perché:
@@ -83,7 +78,8 @@ all(grepl("CC", car$engine) == !is.na(car$engine))
 all((grepl("bhp", car$max_power)) == !is.na(car$max_power))
 #viene TRUE quindi sono tutti consistenti
 ```
-``` {r conteggio km/kg vs kmpl, possibile ipotesi di eliminare le righe dei GPL e CNG}
+
+```{r conteggio km/kg vs kmpl, possibile ipotesi di eliminare le righe dei GPL e CNG}
 # Il numero di auto valore di mileage in kmpl è solo di 88 (contro 7802)
 #sum(grepl("kmpl", car$mileage))
 #sum(grepl("km/kg", car$mileage))
@@ -95,6 +91,7 @@ all((grepl("bhp", car$max_power)) == !is.na(car$max_power))
 ```
 
 # Convesione nelle stringhe 'Valore Unità_Di_Misura' in valori numerici privi di udm
+
 ```{r Eliminazione unità di misura}
 # Creo un nuovo attributo dei soli valori privi di unità di misura
 # includo l'unità di misura nel nome della variabile
@@ -109,7 +106,9 @@ car <- select(car, -c('engine', 'max_power'))
 # Alternativa è creare una colonna di fattori 0 e 1 che indicano l'unità di misura
 # Ma mi sembra un po' eccessivo dato il numero esiguo di unità statistiche
 ```
+
 ### Creazione di una colonna contenente la marca dell'auto
+
 ```{r colonna marca}
 # Uso la funzione word della libreria dplyr
 # la funzione add_column di tibble peraggiunge la nuova colonna dopo la colonna name
@@ -117,6 +116,7 @@ car <- add_column(car, make = factor(word(car$name, 1)), .after = "name")
 ```
 
 #### Missing Value
+
 ```{r missing value}
 # md.pattern (del pacchetto mice), è una funzione di visualizzazione molto utile
 # Permette di vedere la distribuzione di NA 
@@ -128,15 +128,19 @@ sum(!complete.cases(car))
 #Trattandosi di 222 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
 car <- car[-which(!complete.cases(car)),]
 ```
-#### Fase eplorativa 
+
+#### Fase eplorativa
+
 ```{r osservo il dataset}
 class(car)
 dim(car)
 str(car)
 summary(car)
 ```
+
 #### Correlazioni
-``` {r correlazioni}
+
+```{r correlazioni}
 # Estrazione delle variabili numeriche:
 car_nums_colnames <- unlist(lapply(car, is.numeric))
 car_num <- car[ , car_nums_colnames]
@@ -148,11 +152,11 @@ pairs(leggero[, car_nums_colnames])
 cor(car[ ,car_nums_colnames])
 ```
 
-
 #### Analisi distribuzione variabili esplicative numeriche
 
 # istogrammi e box plot
-``` {r istogrammi, include = False}
+
+```{r istogrammi, include = False}
 #istogrammi 
 par(mfrow=c(2,3))
 for (i in names(car_num)) {
@@ -160,16 +164,17 @@ for (i in names(car_num)) {
 }
 par(mfrow=c(1,1))
 ```
-- year: asimmetria negativa
-- selling_price: asimmetria positiva, coda di destra molto lunga
-- km_driven: asimmetria positiva, coda di destra molto lunga
-- seats:
-- engine: 
-- max_power(bhp): leggera asimmetria positiva
 
-Provo a valutare la distribuzione logaritmica di alcune delle variabili numeriche
-asimmetriche
-``` {r istogrammi log, include = False}
+-   year: asimmetria negativa
+-   selling_price: asimmetria positiva, coda di destra molto lunga
+-   km_driven: asimmetria positiva, coda di destra molto lunga
+-   seats:
+-   engine:
+-   max_power(bhp): leggera asimmetria positiva
+
+Provo a valutare la distribuzione logaritmica di alcune delle variabili numeriche asimmetriche
+
+```{r istogrammi log, include = False}
 #istogrammi 
 par(mfrow=c(2,3))
 for (i in c('year','selling_price','km_driven','engine(CC)','max_power(bhp)')) {
@@ -177,8 +182,9 @@ for (i in c('year','selling_price','km_driven','engine(CC)','max_power(bhp)')) {
 }
 par(mfrow=c(1,1))
 ```
-Tutte le variabili numeriche considerate, tranne yaer, sembrano assumere una distribuzione più simmetrica se applicata
-la trasformazione logaritmica
+
+Tutte le variabili numeriche considerate, tranne yaer, sembrano assumere una distribuzione più simmetrica se applicata la trasformazione logaritmica
+
 ```{r trasformazione logaritmica}
 'year'
 'selling_price'
@@ -186,8 +192,10 @@ la trasformazione logaritmica
 'engine(CC)'
 'max_power(bhp)'
 ```
+
 ### Valuto la presenza di outliers
-``` {r outliers, include = False}
+
+```{r outliers, include = False}
 #Boxplot 
 par(mfrow=c(2,3))
 #summary(car_num)
@@ -197,7 +205,7 @@ for (i in names(car_num)) {
 par(mfrow=c(1,1))
 ```
 
-``` {r boxplot log, include = False}
+```{r boxplot log, include = False}
 #istogrammi 
 par(mfrow=c(2,2))
 for (i in c('selling_price','km_driven','engine(CC)','max_power(bhp)')) {
