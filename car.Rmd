@@ -31,15 +31,6 @@ head(data.frame(car))
 View(car)
 ```
 
-### Fase esplorativa 
-
-```{r lettura}
-str(car, give.attr = F)
-summary(car)
-```
-
--   Il dataset ha 8123 unità statistiche e 13 attributi
-
 ## Cleaning del dataset
 
 #### Scegliamo di non considerare i seguenti attributi
@@ -82,24 +73,42 @@ max_power
 
 #### Convesione degli attributi in cui i valori sono stringhe contenenti i valori accompagnati dall'unità di misura in valori numerici privi di unità di misura
 
--   A tale scopo utiliziamo la fuznione
+-   A tale scopo utiliziamo la funzione `parse_value` di `dplyr`
+
+-   Elimino gli attributi contenenti i valori accoppiati alle unità di misura con la funzione `select()` di `dplyr`
 
 ```{r Eliminazione unità di misura}
 car['engine(CC)'] <- parse_number(car$engine)
 car['max_power(bhp)'] <- parse_number(car$max_power)
-# Elimino le colonne con unità di misura usando la funzione select() di dplyr
 car <- select(car, -c('engine', 'max_power'))
-# Alternativa è creare una colonna di fattori 0 e 1 che indicano l'unità di misura
-# Ma mi sembra un po' eccessivo dato il numero esiguo di unità statistiche
 ```
 
-### Creazione di una colonna contenente la marca dell'auto
+#### Creazione di una colonna contenente la marca dell'auto
+
+-   Uso la funzione `word` di `dplyr` per estrarre la prima parola del nome dell'auto, la quale coincide con la marca dell'auto.
+
+-   Creo la variabile categoriale `make` che indica la marca dell'auto e la inserisco nel dataset con la funzione `add_column` della libreria `tibble`
 
 ```{r colonna marca}
 # Uso la funzione word della libreria dplyr
 # la funzione add_column di tibble peraggiunge la nuova colonna dopo la colonna name
 car <- add_column(car, make = factor(word(car$name, 1)), .after = "name")
 ```
+
+## Statistica descrittiva
+
+### Fase esplorativa 
+
+```{r lettura}
+str(car, give.attr = F)
+summary(car)
+class(car)
+dim(car)
+str(car)
+summary(car)
+```
+
+-   Il dataset ha 8123 unità statistiche e 13 attributi
 
 #### Missing Value
 
@@ -113,15 +122,6 @@ sum(!complete.cases(car))
 
 #Trattandosi di 222 righe possiamo pensare di rimuoverle dato che costituiscono circa il 3% del dataset
 car <- car[-which(!complete.cases(car)),]
-```
-
-#### Fase eplorativa
-
-```{r osservo il dataset}
-class(car)
-dim(car)
-str(car)
-summary(car)
 ```
 
 #### Correlazioni
