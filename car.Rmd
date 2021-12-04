@@ -303,4 +303,44 @@ pairs(leggero[, car_nums_colnames])
 cor(car[ ,car_nums_colnames])
 ```
 
-#### 
+# Statistica inferenziale
+
+### Variabili dummy
+
+```{r da variabili fattoriali a variabili dummy}
+
+car_dummy <- car_num
+
+# Aggiungo la variabile fattoriale 'transmission' a car dummy e la converto in numerica (0 corrispode a 'automatic'):
+car_dummy <- cbind(car_dummy,transmission = car$transmission)
+levels(car_dummy$transmission)<-c(1,0)
+car_dummy$transmission <- as.numeric(levels(car_dummy$transmission))[car_dummy$transmission]
+
+#converto la variabile fattoriale 'make' in dummy e la aggiungo a car_dummy:
+dummy_temp <- data.frame(model.matrix( ~make, data = car))[,-1]
+car_dummy <-cbind(car_dummy,dummy_temp)
+
+#converto la variabile fattoriale 'fuel' in dummy e la aggiungo a car_dummy:
+dummy_temp <- data.frame(model.matrix( ~fuel, data = car))[,-1]
+car_dummy <-cbind(car_dummy,dummy_temp)
+
+#converto la variabile fattoriale 'seller_type' in dummy e la aggiungo a car_dummy:
+dummy_temp <- data.frame(model.matrix( ~seller_type, data = car))[,-1]
+car_dummy <-cbind(car_dummy,dummy_temp)
+
+#converto la variabile fattoriale 'owner' in dummy e la aggiungo a car_dummy:
+dummy_temp <- data.frame(model.matrix( ~owner, data = car))[,-1]
+car_dummy <-cbind(car_dummy,dummy_temp)
+
+head(car_dummy)
+```
+
+### Divido il dataset in Training e Test sets
+
+```{r split dataset in Training e Test sets}
+set.seed(100)
+train_ind<-sample(1:nrow(car_dummy),0.8*nrow(car_dummy))
+
+train_set<-car_dummy[train_ind,]
+test_set <-car_dummy[-train_ind,]
+```
