@@ -97,8 +97,6 @@ car <- select(car, -c('engine', 'max_power'))
 -   Creo la variabile categoriale `make` che indica la marca dell'auto e la inserisco nel dataset con la funzione `add_column` della libreria `tibble`
 
 ```{r colonna marca}
-# Uso la funzione word della libreria dplyr
-# la funzione add_column di tibble peraggiunge la nuova colonna dopo la colonna name
 car <- add_column(car, make = factor(word(car$name, 1)), .after = "name")
 ```
 
