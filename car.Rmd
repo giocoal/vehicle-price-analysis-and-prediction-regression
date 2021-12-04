@@ -7,7 +7,7 @@ output:
   pdf_document: default
 ---
 
-### Importazione librerie
+# Importazione librerie
 
 ```{r importazione librerie e opzioni di rendering, include=FALSE}
 
@@ -16,10 +16,15 @@ library(tibble)
 library(dplyr)
 library(stringr)
 library(mice)
-
+library(caret)
+library(ggcorrplot)
+library(ggrepel)
+library(gridExtra)
+library(glmnet)
+library(xgboost)
 ```
 
-### Lettura Dataset
+# Lettura Dataset
 
 -   Vengono assegnati i fase di lettura i tipi corretti ad ogni variabile
 -   Alcune variabili presentano l'unità di misura espressa nel valore, vengono quindi temporanemanente definiti come stringhe
@@ -31,7 +36,11 @@ head(data.frame(car))
 View(car)
 ```
 
-## Cleaning del dataset
+# Obiettivo
+
+L'obiettivo di analisi consiste nella definizione di un modello di regressione lineare multipla che permetta di predire il prezzo di vendita di un'automobile usata.
+
+# Preparazione e pulizia del dataset
 
 #### Scegliamo di non considerare i seguenti attributi
 
@@ -78,8 +87,8 @@ max_power
 -   Elimino gli attributi contenenti i valori accoppiati alle unità di misura con la funzione `select()` di `dplyr`
 
 ```{r Eliminazione unità di misura}
-car['engine(CC)'] <- parse_number(car$engine)
-car['max_power(bhp)'] <- parse_number(car$max_power)
+car['engine_CC'] <- parse_number(car$engine)
+car['max_power_bhp'] <- parse_number(car$max_power)
 car <- select(car, -c('engine', 'max_power'))
 ```
 
@@ -95,23 +104,9 @@ car <- select(car, -c('engine', 'max_power'))
 car <- add_column(car, make = factor(word(car$name, 1)), .after = "name")
 ```
 
-## Statistica descrittiva
+# Statistica descrittiva
 
-### Fase esplorativa
-
-```{r lettura}
-str(car, give.attr = F)
-summary(car)
-class(car)
-dim(car)
-str(car)
-summary(car)
-```
-
--   Il dataset ha 8123 unità statistiche e 13 attributi
--   Individuiamo come variabile target la variabile quantitativa continua `selling_price`
-
-### Missing Value
+## Missing Value
 
 -   Dalla visualizzazione prodotta con l'ausilio della funzione `md.pattern` del pacchetto `mice` notiamo come:
 
@@ -130,9 +125,74 @@ md.pattern(car, rotate.names=TRUE)
 car <- car[-which(!complete.cases(car)),]
 ```
 
+## Outliers
+
+Creiamo un subset del dataset contenente le sole variabili quantitative
+
+```{r Estrazione delle variabili numeriche}
+car_nums_colnames <- unlist(lapply(car, is.numeric))
+car_num <- car[ , car_nums_colnames]
+```
+
+Osserviamo i valori minimi e massimi delle variabili quantitative
+
+```{r}
+summary(car_num)
+```
+
+Osserviamo i boxplot
+
+```{r boxplot}
+par(mfrow=c(2,3))
+for (i in names(car_num)) {
+  boxplot(car_num[[i]], main = '', xlab = i)
+}
+par(mfrow=c(1,1))
+
+
+```
+
+```{r boxplot log}
+par(mfrow=c(2,3))
+for (i in names(car_num)) {
+  boxplot(log(car_num[[i]]), main = '', xlab = i)
+}
+par(mfrow=c(1,1))
+
+```
+
+### Fase esplorativa
+
+```{r lettura}
+#str(car, give.attr = F)
+summary(car)
+#class(car)
+#dim(car)
+
+```
+
+-   Il dataset ha 8123 unità statistiche e 13 attributi
+-   Individuiamo come variabile target la variabile quantitativa continua `selling_price`
+
 ### Analisi Distribuzionale
 
-#### Analisi distribuzionale per visualizzazione
+#### Variabile Target: selling_price
+
+Osserviamo la distribuzione della variabile target `selling_price`
+
+```{r istogramma selling price}
+car %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins=50)+geom_density(aes(selling_price))
+```
+
+La distribuzione presenta una forte asimmetria positiva, con una coda di destra molto lunga.
+
+Proviamo a visualizzare nuovamente la variabile dopo l'applicazione di una trasformazione logaritmica.
+
+```{r istogramma selling_price_log}
+car %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins=50)+geom_density(aes(selling_price))+scale_x_log10()
+```
+
+La variabile target, in seguito alla trasformazione logaritmica, risulta più simmetrica, quindi questa sarà trasformata prima di procedere con la fase di inferenza e predizione.
 
 #### Analisi distribuzione variabili esplicative numeriche
 
@@ -145,6 +205,30 @@ for (i in names(car_num)) {
   hist(car_num[[i]], xlab = i, main = '')
 }
 par(mfrow=c(1,1))
+
+#istogrammi
+
+plot1 <- car_num %>% ggplot()+geom_histogram(aes(year, ..density..), bins=30)+geom_density(aes(year))
+print(plot1)
+plot2 <- car_num %>% ggplot()+geom_histogram(aes(km_driven, ..density..), bins=30)+geom_density(aes(km_driven))
+print(plot2)
+plot3 <- car_num %>% ggplot()+geom_histogram(aes(seats, ..density..), bins=)+geom_density(aes(seats))
+print(plot3)
+plot4 <- car_num %>% ggplot()+geom_histogram(aes(engine_CC, ..density..), bins=30)+geom_density(aes(engine_CC))
+print(plot4)
+plot5 <- car_num %>% ggplot()+geom_histogram(aes(max_power_bhp, ..density..), bins=30)+geom_density(aes(max_power_bhp))
+print(plot5)
+#grid.arrange(plot1, plot2, plot3, plot4, plot5, ncol = 2)
+```
+
+Calcoliamo l'indice di asimmetria o *skewness*
+
+```{r}
+library(psych)
+for (i in names(car_num)) {
+  print(i)
+  print(skew(car_num[[i]]))
+}
 ```
 
 -   year: asimmetria negativa
@@ -156,6 +240,15 @@ par(mfrow=c(1,1))
 
 Provo a valutare la distribuzione logaritmica di alcune delle variabili numeriche asimmetriche
 
+```{r}
+library(psych)
+for (i in names(car_num)) {
+  print(i)
+  print(skew(log(car_num[[i]])))
+}
+
+```
+
 ```{r istogrammi log, include = False}
 #istogrammi 
 par(mfrow=c(2,3))
@@ -163,6 +256,13 @@ for (i in c('year','selling_price','km_driven','engine(CC)','max_power(bhp)')) {
   hist(log(car_num[[i]]), xlab = i, main = '')
 }
 par(mfrow=c(1,1))
+
+plot1 <- car_num %>% ggplot()+geom_histogram(aes(log(year), ..density..), bins=30)+geom_density(aes(log(year)))
+plot2 <- car_num %>% ggplot()+geom_histogram(aes(log(km_driven), ..density..), bins=30)+geom_density(aes(log(km_driven)))
+plot3 <- car_num %>% ggplot()+geom_histogram(aes(log(seats), ..density..), bins=)+geom_density(aes(log(seats)))
+plot4 <- car_num %>% ggplot()+geom_histogram(aes(log(engine_CC), ..density..), bins=30)+geom_density(aes(log(engine_CC)))
+plot5 <- car_num %>% ggplot()+geom_histogram(aes(log(max_power_bhp), ..density..), bins=30)+geom_density(aes(log(max_power_bhp)))
+grid.arrange(plot1, plot2, plot3, plot4, plot5, ncol = 2)
 ```
 
 Tutte le variabili numeriche considerate, tranne yaer, sembrano assumere una distribuzione più simmetrica se applicata la trasformazione logaritmica
@@ -199,9 +299,6 @@ par(mfrow=c(1,1))
 #### Correlazioni
 
 ```{r correlazioni}
-# Estrazione delle variabili numeriche:
-car_nums_colnames <- unlist(lapply(car, is.numeric))
-car_num <- car[ , car_nums_colnames]
 # Prendo un campione di osservazioni per rendere più agile la rappresentazione grafica:
 leggero <- car[sample(nrow(car), 500), ]
 
