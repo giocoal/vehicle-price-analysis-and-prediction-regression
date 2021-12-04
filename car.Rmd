@@ -78,8 +78,6 @@ all((grepl("bhp", car$max_power)) == !is.na(car$max_power))
 #viene TRUE quindi sono tutti consistenti
 ```
 
-max_power
-
 #### Convesione degli attributi in cui i valori sono stringhe contenenti i valori accompagnati dall'unità di misura in valori numerici privi di unità di misura
 
 -   A tale scopo utiliziamo la funzione `parse_value` di `dplyr`
