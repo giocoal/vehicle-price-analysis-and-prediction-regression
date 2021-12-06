@@ -217,7 +217,7 @@ print(plot5)
 #grid.arrange(plot1, plot2, plot3, plot4, plot5, ncol = 2)
 ```
 
-Calcoliamo l'indice di asimmetria o *skewness*
+Calcoliamo l'indice di asimmetria o di *skewness*
 
 ```{r}
 library(psych)
@@ -345,8 +345,8 @@ train_set<-car_dummy[train_ind,]
 test_set <-car_dummy[-train_ind,]
 ```
 
+\#applico un'analisi di regressione fra year e selling price
 
-#applico un'analisi di regressione fra year e selling price
 ```{r analisi di regressione fra le colonne year e selling price}
 car1<-car[,c(3,4)]
 test_lm<-lm(log(selling_price) ~.,data = car1)
@@ -354,36 +354,9 @@ summary(test_lm)
 (summary(test_lm)$coefficient)
 ```
 
-#applico un plot per analizzare la variabile target sui residui
-#(bisogna allargare l'asse x su alcuni plot per vedere meglio l'andamento)
-#Nel secondo diagramma per la regressione ideale i punti dovrebbero trovarsi sulla retta diagonale e per questo motivo il nostro risultato non è così male da rifiutare il modello.
-#negli altri grafici invece affinchè si ottenga una regressione lineare corretta le linee rosse si sarebbero dovute essere parallele all'asse x (dire se i risultati sono più o meno accettabili dopo aver allargato l'asse delle x per l'osservazione)
+\#applico un plot per analizzare la variabile target sui residui \#(bisogna allargare l'asse x su alcuni plot per vedere meglio l'andamento) \#Nel secondo diagramma per la regressione ideale i punti dovrebbero trovarsi sulla retta diagonale e per questo motivo il nostro risultato non è così male da rifiutare il modello. \#negli altri grafici invece affinchè si ottenga una regressione lineare corretta le linee rosse si sarebbero dovute essere parallele all'asse x (dire se i risultati sono più o meno accettabili dopo aver allargato l'asse delle x per l'osservazione)
+
 ```{r faccio un plot per analizzare i grafici che ottengo}
 plot(test_lm)
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
