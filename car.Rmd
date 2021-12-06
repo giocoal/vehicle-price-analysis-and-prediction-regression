@@ -18,6 +18,7 @@ library(stringr)
 library(mice)
 library(caret)
 library(ggcorrplot)
+library(GGally) #Per il ggcorr()
 library(ggrepel)
 library(gridExtra)
 library(glmnet)
@@ -196,12 +197,11 @@ La variabile target, in seguito alla trasformazione logaritmica, risulta più si
 
 ```{r istogrammi, include = False}
 #istogrammi 
-par(mfrow=c(2,3))
-for (i in names(car_num)) {
-  hist(car_num[[i]], xlab = i, main = '')
-}
-par(mfrow=c(1,1))
-
+#par(mfrow=c(2,3))
+#for (i in names(car_num)) {
+#  hist(car_num[[i]], xlab = i, main = '')
+#}
+#par(mfrow=c(1,1))
 #istogrammi
 
 plot1 <- car_num %>% ggplot()+geom_histogram(aes(year, ..density..), bins=30)+geom_density(aes(year))
@@ -214,7 +214,7 @@ plot4 <- car_num %>% ggplot()+geom_histogram(aes(engine_CC, ..density..), bins=3
 print(plot4)
 plot5 <- car_num %>% ggplot()+geom_histogram(aes(max_power_bhp, ..density..), bins=30)+geom_density(aes(max_power_bhp))
 print(plot5)
-#grid.arrange(plot1, plot2, plot3, plot4, plot5, ncol = 2)
+grid.arrange(plot1, plot2, plot3, plot4, plot5, ncol = 2)
 ```
 
 Calcoliamo l'indice di asimmetria o di *skewness*
@@ -247,11 +247,11 @@ for (i in names(car_num)) {
 
 ```{r istogrammi log, include = False}
 #istogrammi 
-par(mfrow=c(2,3))
-for (i in c('year','selling_price','km_driven','engine(CC)','max_power(bhp)')) {
-  hist(log(car_num[[i]]), xlab = i, main = '')
-}
-par(mfrow=c(1,1))
+#par(mfrow=c(2,3))
+#for (i in c('year','selling_price','km_driven','engine(CC)','max_power(bhp)')) {
+#  hist(log(car_num[[i]]), xlab = i, main = '')
+#}
+#par(mfrow=c(1,1))
 
 plot1 <- car_num %>% ggplot()+geom_histogram(aes(log(year), ..density..), bins=30)+geom_density(aes(log(year)))
 plot2 <- car_num %>% ggplot()+geom_histogram(aes(log(km_driven), ..density..), bins=30)+geom_density(aes(log(km_driven)))
@@ -294,6 +294,9 @@ par(mfrow=c(1,1))
 
 #### Correlazioni
 
+Visualizzo possibili correlazioni osservando i *pair plots* tra le variabil quantitative.\
+Al fine di rendere più agile la rappresentazione grafica viene selezionato tramite *simple random sampling* un campione di 500 unità statistiche del dataset originale.
+
 ```{r correlazioni}
 # Prendo un campione di osservazioni per rendere più agile la rappresentazione grafica:
 leggero <- car[sample(nrow(car), 500), ]
@@ -301,6 +304,13 @@ leggero <- car[sample(nrow(car), 500), ]
 # Matrice dei diagrammi di dispersione:
 pairs(leggero[, car_nums_colnames])
 cor(car[ ,car_nums_colnames])
+```
+
+Al fine di evidenziare le correlazioni osservo i *coefficienti di correlazione di Pearson*
+
+```{r Pearson}
+ggcorr(car_num, label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
+
 ```
 
 # Statistica inferenziale
