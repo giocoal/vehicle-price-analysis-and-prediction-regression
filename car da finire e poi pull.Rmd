@@ -355,9 +355,9 @@ train_set<-car_dummy[train_ind,]
 test_set <-car_dummy[-train_ind,]
 ```
 
-\#applico un'analisi di regressione fra year e selling price e aggiungo un numero di colonne scelte a caso che poi andranno eliminate e non valutate per l'analisi solo per poter utilizzare il comando vif per lo studio della multicollinearità. E' giusto???
+\#applico un'analisi di regressione e aggiungo un numero di colonne scelte a caso che poi andranno eliminate e non valutate per l'analisi solo per poter utilizzare il comando vif per lo studio della multicollinearità. E' giusto???  #### car_dummy non va unito al dataset originale con le colonne cambiate in variabili dummy?
 
-```{r analisi di regressione fra le colonne year e selling price}
+```{r analisi di regressione del modello di training}
 car1<-train_set[,c(1:6,16:23,24:30)]
 test_lm<-lm(log(selling_price) ~.,data = car1)
 summary(test_lm)
@@ -409,7 +409,7 @@ cars_workflow
 ```
 
 #installare pacchetto kknn per SML
-#Successivamente, creo un tibble di valori neighbords scelti in un range da 300 a 600 con una funzione passo di +3 e successivamente utilizzo le funzioni tune_grid() e collect_metrics() per ottenere le medie di un certo numero di neighbords. Eseguo questo passaggio per ottenere il numero di neighbords che mi da il valore minimo dell'RMD (root mean square).
+#Successivamente, creo un tibble di valori neighbords scelti in un range da 300 a 600 con una step_function di +3 e successivamente utilizzo le funzioni tune_grid() e collect_metrics() per ottenere le medie di un certo numero di neighbords. Eseguo questo passaggio per ottenere il numero di neighbords che mi da il valore minimo dell'RMD (root mean square).
 ```{r creazione di una tibble di valori neighbords per estrarre il valore con l'RDM più basso}
 grid_vals <- tibble(neighbors=seq(from=300,to=600, by = 3))
 
