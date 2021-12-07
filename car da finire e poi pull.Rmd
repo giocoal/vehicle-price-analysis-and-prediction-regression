@@ -408,7 +408,7 @@ cars_workflow
 
 ```
 
-
+#installare pacchetto kknn per SML
 #Successivamente, creo un tibble di valori neighbords scelti in un range da 300 a 600 con una funzione passo di +3 e successivamente utilizzo le funzioni tune_grid() e collect_metrics() per ottenere le medie di un certo numero di neighbords. Eseguo questo passaggio per ottenere il numero di neighbords che mi da il valore minimo dell'RMD (root mean square).
 ```{r creazione di una tibble di valori neighbords per estrarre il valore con l'RDM più basso}
 grid_vals <- tibble(neighbors=seq(from=300,to=600, by = 3))
@@ -419,7 +419,7 @@ cars_results <- cars_workflow%>%
     filter(.metric=="rmse")
 head(cars_results)
 
-
+##### sistemare
 
 
 ```
