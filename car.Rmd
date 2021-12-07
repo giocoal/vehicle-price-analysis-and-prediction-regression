@@ -159,8 +159,7 @@ for (i in names(car_num)) {
 par(mfrow=c(1,1))
 ```
 
-Tutte le variabili presentano un numero elevato di sospetti outliers. In particolare, tutte le variabili presentano un certo numero di osservazioni classificate come potenziali valori anomali perchè si trovano al di sopra del baffo superiore del boxplot, la cui posizione è definita come $q_{0.75} + 1.5 \cdot IQR$ , dove IQR è il range interquartile.
-Proviamo a escludere dai potenziali outlier i *mild outlier* e andiamo invece solo a considerare gli *extreme outlier*, aumentando il range di osservazioni incluse nei baffi del boxplot da$I = [q_{0.25} - 1.5 \cdot IQR; q_{0.75} + 1.5 \cdot IQR]$ a $I = [q_{0.25} - 3 \cdot IQR; q_{0.75} + 3 \cdot IQR]$
+Tutte le variabili presentano un numero elevato di sospetti outliers. In particolare, tutte le variabili presentano un certo numero di osservazioni classificate come potenziali valori anomali perchè si trovano al di sopra del baffo superiore del boxplot, la cui posizione è definita come $q_{0.75} + 1.5 \cdot IQR$ , dove IQR è il range interquartile. Proviamo a escludere dai potenziali outlier i *mild outlier* e andiamo invece solo a considerare gli *extreme outlier*, aumentando il range di osservazioni incluse nei baffi del boxplot da$I = [q_{0.25} - 1.5 \cdot IQR; q_{0.75} + 1.5 \cdot IQR]$ a $I = [q_{0.25} - 3 \cdot IQR; q_{0.75} + 3 \cdot IQR]$
 
 Inoltre, dato che gli outlier sono solo osservazioni che si trovano al di sopra del baffo superiore dei boxplot, proviamo ad applicare una trasformazione logaritmica.
 
@@ -385,9 +384,66 @@ car_num <- add_column(car_num, log_max_power_bhp = log(car_num$max_power_bhp), .
 car_num <- add_column(car_num, log_engine_CC = log(car_num$engine_CC), .after = "engine_CC")
 ```
 
-## Analisi delle correlazioni 
+## Analisi distirbuzionale variabili qualitative
 
-Visualizzo possibili correlazioni osservando i *pair plots* tra le variabil quantitative.\
+### `fuel`: tipo di carburante
+
+```{r tipo di carburante}
+# coef = 3 indica la lunghezza dei baffi come multipli dell'IQR (porto da 1.5 a 4)
+p <- car %>% ggplot(aes(fuel, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 0, hjust = 1))+stat_summary(fun.y=mean, geom="point", shape=20, size=3, color="red", fill="red")
+print(p)
+```
+
+Sono presentati i Boxplot delle distribuzioni di `selling_price` in funzione del tipo di `fuel`. Per ogni distribuzione, mediante l'utilizzo di linee orizzontati sono rappresentati rispettivamente (partendo dal basso) il primo quartile, la mediana e il terzo quartile. Viene inoltre aggiunta, sfruttando `stat_summary` la media, rappresentata da un punto di colore rosso.
+
+Dalle distribuzioni si evince come, in media, il prezzo di vendita di una macchina a GPL usata risulti essere il minore. Invece, per le auto a Diesel, si ha una concentrazione di osservazioni a valori di `selling_price` maggiori e un prezzo medio maggiore rispetto a auto con altre tipologie di carburante.
+
+Effettuiamo il test di indipendenza *Fisher's Exact Test* per verificare l'indipendenza tra `selling_price` e `fuel`:
+
+```{r tabelle di contingenza e test chi-quadrato}
+# Voglio verificare con il test chi-quadrato l'indipendenza tra le distribuzioni
+# voglio vedere se ci sia dipendenza tra selling_price e il tipo di carburante
+# Il test resituisce un warning perchè i valori delle celle della tabella di contingenza sono bassi
+#ggplot_build(p)$data[[1]]
+#table(car$log_selling_price, car$fuel)
+chisq_price_fuel <- fisher.test(car$log_selling_price, car$fuel, simulate.p.value = TRUE)
+chisq_price_fuel
+#chisq_price_fuel$observed
+```
+
+Il valore del p-value, minore del livello di significatività (0.05), fa si che sia rifiutata l'ipotesi nulla e concludiamo che le due variabili non siano indipendenti.
+
+### Tipo di proprietario: `owner`
+
+```{r tipo di proprietario}
+p1 <- car %>% ggplot(aes(owner, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 0, hjust = 1))+stat_summary(fun.y=mean, geom="point", shape=20, size=3, color="red", fill="red")+theme(axis.text.x = element_text(angle = 20, hjust = 1))
+print(p1)
+
+```
+
+Dalle distribuzioni si evince come, in media, il prezzo di vendita di un'automobile usata tenda a diminuire all'aumentare del numero di precedenti proprietari dell'auto (quindi a ogni passaggio di proprietà).
+
+Effettuiamo il test di indipendenza *Fisher's Exact Test* per verificare l'indipendenza tra `selling_price` e `owner`:
+
+```{r test di fisher esatto}
+chisq_price_owner <- fisher.test(car$log_selling_price, car$owner, simulate.p.value = TRUE)
+chisq_price_owner
+```
+
+Il valore del p-value, minore del livello di significatività (0.05), fa si che sia rifiutata l'ipotesi nulla e concludiamo che le due variabili non siano indipendenti.
+
+### Distribuzione delle marche di auto (`make`) nel mercato dell'usato
+
+```{r make boxplot}
+car %>% ggplot(aes(make, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+### 
+
+## Analisi delle correlazioni
+
+Visualizzo possibili correlazioni osservando i *pair plots* (diagrammi a dispersione accoppiati) tra le variabil quantitative.\
 Al fine di rendere più agile la rappresentazione grafica viene selezionato tramite *simple random sampling* un campione di 500 unità statistiche del dataset originale.
 
 ```{r correlazioni}
@@ -406,6 +462,26 @@ Al fine di evidenziare le correlazioni osservo i *coefficienti di correlazione d
 ggcorr(car[,car_nums_colnames_log], label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
 
 ```
+
+Osservando i *coefficienti di correlazione di Pearson* deduciamo che la variabile target `log_selling_price` presenza:
+
+-   Debole associazione positiva con la variabile `seats`
+
+-   Debole associazione negativa con la variabile `km_driven`
+
+-   Moderata associazione positiva con la variabile `log_engine_CC`
+
+-   **Forte associazione positiva** con la variabile `log_max_power_bhp` (0.7)
+
+-   **Forte associazione negativa** con la variabile `log_age` (-0.7)
+
+Per quanto riguarda le associazioni tra le variabili esplicative, si evidenziano alcuni problemi collegati a una probabile **multicollinarità**:
+
+-   `seats` presenta forte associazione positiva con `log_engine_CC`
+
+-   `log_max_power_bhp` presenta forte associazione positiva con `log_engine_CC`
+
+-   `km_driven` presenta una moderata associazione con `log_age`
 
 # Statistica inferenziale
 
