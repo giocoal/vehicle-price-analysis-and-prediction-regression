@@ -2,7 +2,7 @@
 # Simulazione progetto
 # 4 novembre 2021
 
-path <- "/Users/mauge/Desktop/Università/DATA SCIENCE/Found. of Statistics/R/Data/housing.csv"
+path <- "housing.csv"
 house <- read.delim(path, header = TRUE, sep=",")
 
 # A ANALISI ESPLORATIVA DEI DATI
