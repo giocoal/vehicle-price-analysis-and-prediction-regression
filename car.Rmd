@@ -18,6 +18,8 @@ library(stringr)
 library(mice)
 library(caret)
 library(ggcorrplot)
+library(GGally) #Per il ggcorr()
+library(psych)
 library(ggrepel)
 library(gridExtra)
 library(glmnet)
@@ -58,6 +60,15 @@ Conversione dell'unità di misura del prezzo di vendita da centesimi di dollaro 
 
 ```{r da centesimo a dollaro}
 car$selling_price <- car$selling_price*0.01
+```
+
+#### Conversione variabile `year` (anno di produzione) in `age` (anni di vita dell)
+
+Conversione della variabile `year` (anno di produzione) in `age` (anni di vita dell'auto nell'anno di vendita, ovvero il 2021)
+
+```{r conversione year in age}
+car <- add_column(car, age = 2021 - car$year, .after = "year")
+car <- select(car, -c("year"))
 ```
 
 #### Introduzione di NA per l'attributo max_power
@@ -128,34 +139,55 @@ Creiamo un subset del dataset contenente le sole variabili quantitative
 ```{r Estrazione delle variabili numeriche}
 car_nums_colnames <- unlist(lapply(car, is.numeric))
 car_num <- car[ , car_nums_colnames]
+car_num <- select(car_num, -c('seats'))
 ```
 
-Osserviamo i valori minimi e massimi delle variabili quantitative
+Osserviamo i valori minimi e massimi per ogni attributo quantitativo
 
 ```{r}
 summary(car_num)
 ```
 
-Osserviamo i boxplot
+Valuto la presenza di outliers nelle variabili quantitative (e, quando presenti, delle rispettive variabili con trasformazione logaritmica) tramite l'osservazione dei *boxplot*.
 
-```{r boxplot}
+```{r boxplot per outliers, include = False}
 par(mfrow=c(2,3))
+#summary(car_num)
 for (i in names(car_num)) {
-  boxplot(car_num[[i]], main = '', xlab = i)
+  boxplot(car_num[[i]], xlab = i, main = '')
 }
 par(mfrow=c(1,1))
-
-
 ```
+
+Tutte le variabili presentano un numero elevato di sospetti outliers. In particolare, tutte le variabili presentano un certo numero di osservazioni classificate come potenziali valori anomali perchè si trovano al di sopra del baffo superiore del boxplot, la cui posizione è definita come $q_{0.75} + 1.5 \cdot IQR$ , dove IQR è il range interquartile.
+Proviamo a escludere dai potenziali outlier i *mild outlier* e andiamo invece solo a considerare gli *extreme outlier*, aumentando il range di osservazioni incluse nei baffi del boxplot da$I = [q_{0.25} - 1.5 \cdot IQR; q_{0.75} + 1.5 \cdot IQR]$ a $I = [q_{0.25} - 3 \cdot IQR; q_{0.75} + 3 \cdot IQR]$
+
+Inoltre, dato che gli outlier sono solo osservazioni che si trovano al di sopra del baffo superiore dei boxplot, proviamo ad applicare una trasformazione logaritmica.
 
 ```{r boxplot log}
 par(mfrow=c(2,3))
 for (i in names(car_num)) {
-  boxplot(log(car_num[[i]]), main = '', xlab = i)
+  boxplot(log(car_num[[i]]), main = '', xlab = i, range = 3)
 }
 par(mfrow=c(1,1))
 
 ```
+
+Rimuoviamo alcune unità statistiche (lo 0.6% del dataset) contenenti valori anomali particolamente distanti dalle altre osservazioni disponibili.
+
+```{r}
+car_num <- car_num[car_num$selling_price < 80000, ]
+car_num <- car_num[car_num$engine_CC < 3000, ]
+car_num <- car_num[car_num$max_power_bhp < 300, ]
+car_num <- car_num[car_num$km_driven < 300000 & car_num$km_driven > 1, ]
+
+car <- car[car$selling_price < 80000, ]
+car <- car[car$engine_CC < 3000, ]
+car <- car[car$max_power_bhp < 300, ]
+car <- car[car$km_driven < 300000 & car$km_driven > 1, ]
+```
+
+## Analisi Distribuzionale variabili quantitative
 
 ### Fase esplorativa
 
@@ -170,137 +202,209 @@ summary(car)
 -   Il dataset ha 8123 unità statistiche e 13 attributi
 -   Individuiamo come variabile target la variabile quantitativa continua `selling_price`
 
-### Analisi Distribuzionale
+### Variabile Target: selling_price
 
-#### Variabile Target: selling_price
+#### Indicatori Statistici
 
-Osserviamo la distribuzione della variabile target `selling_price`
-
-```{r istogramma selling price}
-car %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins=50)+geom_density(aes(selling_price))
+```{r statistical indicators}
+summary(car$selling_price)
 ```
 
-La distribuzione presenta una forte asimmetria positiva, con una coda di destra molto lunga.
+#### Visualizzazioni e analisi della forma della distribuzione
+
+Osserviamo la distribuzione della variabile target `selling_price` utilizzando come visualizzazione un istogramma. Nel grafico viene inserita una stima della funzione di densità di probabilità ottenuta con il metodo *kernel density estimation (KDE).*
+
+```{r istogramma selling price}
+car %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins = 30, )+geom_density(aes(selling_price))+ggtitle('Istogramma di selling_price (prezzo di vendita auto usate)')+xlab('Selling Price')+ylab('Densità')
+
+#hist(car$selling_price,
+#     freq = F,
+#     main = "Istogramma di selling_price (prezzo di vendita auto usate)",
+#     xlab = "Selling Price",
+#     ylab = "Densità",
+#     breaks = 237
+#     )
+```
+
+Valutiamo la simmetria della distribuzione con l'ausilio dell'*indice di simmetria di Pearson* e la curtosi con L'*indice di curtosi di Pearson*
+
+```{r}
+print(paste("Indice di asimmetria della variabile response selling_price:", skew(car$selling_price), sep = " "))
+print(paste("Indice di curtosi della variabile response selling_price:", kurtosi(car$selling_price), sep = " "))
+
+```
+
+La distribuzione presenta una forte asimmetria positiva, con una coda di destra molto lunga, inoltre essa soffre di un *eccesso di curtosi* (essendo il valore dell'indice di curtosi maggiore di 3)
 
 Proviamo a visualizzare nuovamente la variabile dopo l'applicazione di una trasformazione logaritmica.
 
 ```{r istogramma selling_price_log}
-car %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins=50)+geom_density(aes(selling_price))+scale_x_log10()
+car %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins = 30, )+geom_density(aes(selling_price))+ggtitle('Istogramma del logaritmo di selling_price (prezzo di vendita auto usate)')+xlab('Selling Price')+ylab('Densità')+scale_x_log10()
 ```
 
-La variabile target, in seguito alla trasformazione logaritmica, risulta più simmetrica, quindi questa sarà trasformata prima di procedere con la fase di inferenza e predizione.
+Valutiamo la simmetria e la curtosi della distribuzione dopo l'applicazione della trasformazione logaritmica
 
-#### Analisi distribuzione variabili esplicative numeriche
+```{r simmetria e curtosi log_selling_price}
+print(paste("Indice di asimmetria della variabile response selling_price:", skew(log(car$selling_price)), sep = " "))
+print(paste("Indice di curtosi della variabile response selling_price:", kurtosi(log(car$selling_price)), sep = " "))
+```
 
-# istogrammi e box plot
+La variabile target, in seguito alla trasformazione logaritmica, risulta più simmetrica e non più affetta da eccesso di curtosi, quindi questa sarà trasformata prima di procedere con la fase di inferenza.
+
+### Analisi distribuzione variabili esplicative quantitative
+
+#### Indicatori statistici
+
+```{r indicatori statistici}
+summary(car_num)
+```
+
+#### Visualizzazioni e analisi della forma della distribuzioni
+
+In modo analogo a quanto fatto con la variabile target, osserviamo la distribuzione delle variabili esplicative quantitative `year`, `km_driven`, `seats`, `engine_CC` e `max_power_bhp`.
 
 ```{r istogrammi, include = False}
 #istogrammi 
-par(mfrow=c(2,3))
-for (i in names(car_num)) {
-  hist(car_num[[i]], xlab = i, main = '')
-}
-par(mfrow=c(1,1))
-
+#par(mfrow=c(2,3))
+#for (i in names(car_num)) {
+#  hist(car_num[[i]], xlab = i, main = '')
+#}
+#par(mfrow=c(1,1))
 #istogrammi
 
-plot1 <- car_num %>% ggplot()+geom_histogram(aes(year, ..density..), bins=30)+geom_density(aes(year))
-print(plot1)
-plot2 <- car_num %>% ggplot()+geom_histogram(aes(km_driven, ..density..), bins=30)+geom_density(aes(km_driven))
-print(plot2)
-plot3 <- car_num %>% ggplot()+geom_histogram(aes(seats, ..density..), bins=)+geom_density(aes(seats))
-print(plot3)
-plot4 <- car_num %>% ggplot()+geom_histogram(aes(engine_CC, ..density..), bins=30)+geom_density(aes(engine_CC))
-print(plot4)
-plot5 <- car_num %>% ggplot()+geom_histogram(aes(max_power_bhp, ..density..), bins=30)+geom_density(aes(max_power_bhp))
-print(plot5)
-#grid.arrange(plot1, plot2, plot3, plot4, plot5, ncol = 2)
+plot1 <- car_num %>% ggplot()+geom_histogram(aes(age, ..density..), bins=15)+geom_density(aes(age))+ylab('')
+#print(plot1)
+
+#plot2 <- car_num %>% ggplot()+geom_histogram(aes(km_driven, ..density..), bins=30#)+geom_density(aes(km_driven))+scale_x_continuous(labels = function(x) format(x, scientific #= T))+theme(axis.text.x = element_text(angle = 10))+ylab('')
+plot2 <- car_num %>% ggplot()+geom_histogram(aes(km_driven, ..density..), bins=30)+geom_density(aes(km_driven))+scale_x_continuous(labels = function(x) format(x, scientific = F))+ylab('')
+
+#plot3 <- car_num %>% ggplot()+geom_histogram(aes(seats, ..density..), bins=)+geom_density#(aes(seats))+ylab('')
+#print(plot3)
+
+plot4 <- car_num %>% ggplot()+geom_histogram(aes(engine_CC, ..density..), bins=30)+geom_density(aes(engine_CC))+ylab('')
+#print(plot4)
+
+plot5 <- car_num %>% ggplot()+geom_histogram(aes(max_power_bhp, ..density..), bins=25)+geom_density(aes(max_power_bhp))+ylab('')
+#print(plot5)
+
+grid.arrange(plot1, plot2, plot4, plot5, ncol = 2,
+             top = "Istogrammi delle distribuzioni delle variabili esplicative quantitative",
+             left = "Densità"
+             )
 ```
 
-Calcoliamo l'indice di asimmetria o di *skewness*
+Calcoliamo l'*indice di asimmetria di Pearson*
 
-```{r}
-library(psych)
+```{r indice di asimmetria}
 for (i in names(car_num)) {
-  print(i)
-  print(skew(car_num[[i]]))
+  if (i == 'selling_price'){
+    next
+  }
+  print(paste("Indice di asimmetria di Pearson di",i,":", skew(car_num[[i]]), sep = " "))
 }
 ```
 
--   year: asimmetria negativa
--   selling_price: asimmetria positiva, coda di destra molto lunga
--   km_driven: asimmetria positiva, coda di destra molto lunga
--   seats:
--   engine:
--   max_power(bhp): leggera asimmetria positiva
+Calcoliamo l'*indice di curtosi di Pearson,* al fine di quantificare la curtosi ovvero lo 'spessore' delle code delle distribuzioni
 
-Provo a valutare la distribuzione logaritmica di alcune delle variabili numeriche asimmetriche
-
-```{r}
-library(psych)
+```{r indice di curtosi di Pearson}
 for (i in names(car_num)) {
-  print(i)
-  print(skew(log(car_num[[i]])))
+  if (i == 'selling_price'){
+    next
+  }
+  print(paste("Indice di curtosi di Pearson di",i,":", kurtosi(car_num[[i]]), sep = " "))
+}
+```
+
+Traiamo le seguenti conclusioni riguardo la simmetria delle variabili:
+
+-   age: asimmetria positiva
+-   km_driven: asimmetria positiva, coda di destra molto pronunciata
+-   engine_CC: asimmetria positiva
+-   max_power_bhp: asimmetria positiva pronunciata, curtosi pronunciata vicina a una condizione di *eccesso di curtosi*
+
+Valutiamo la forma delle distribuzioni delle variabili esplicative quantitative dopo l'applicazione di una trasformazione logaritmica.
+
+```{r indice di simmetria di Pearson trasformazione logaritmica}
+for (i in names(car_num)) {
+  if (i == 'selling_price'){
+    next
+  }
+  print(paste("Indice di asimmetria di",i,":", skew(log(car_num[[i]])), sep = " "))
 }
 
+```
+
+```{r indice di curtosi di Pearson trasformazione logaritmica}
+for (i in names(car_num)) {
+  if (i == 'selling_price'){
+    next
+  }
+  print(paste("Indice di curtosi di Pearson di",i,":", kurtosi(log(car_num[[i]])), sep = " "))
+}
 ```
 
 ```{r istogrammi log, include = False}
 #istogrammi 
-par(mfrow=c(2,3))
-for (i in c('year','selling_price','km_driven','engine(CC)','max_power(bhp)')) {
-  hist(log(car_num[[i]]), xlab = i, main = '')
-}
-par(mfrow=c(1,1))
+#par(mfrow=c(2,3))
+#for (i in c('year','selling_price','km_driven','engine(CC)','max_power(bhp)')) {
+#  hist(log(car_num[[i]]), xlab = i, main = '')
+#}
+#par(mfrow=c(1,1))
 
-plot1 <- car_num %>% ggplot()+geom_histogram(aes(log(year), ..density..), bins=30)+geom_density(aes(log(year)))
-plot2 <- car_num %>% ggplot()+geom_histogram(aes(log(km_driven), ..density..), bins=30)+geom_density(aes(log(km_driven)))
-plot3 <- car_num %>% ggplot()+geom_histogram(aes(log(seats), ..density..), bins=)+geom_density(aes(log(seats)))
-plot4 <- car_num %>% ggplot()+geom_histogram(aes(log(engine_CC), ..density..), bins=30)+geom_density(aes(log(engine_CC)))
-plot5 <- car_num %>% ggplot()+geom_histogram(aes(log(max_power_bhp), ..density..), bins=30)+geom_density(aes(log(max_power_bhp)))
-grid.arrange(plot1, plot2, plot3, plot4, plot5, ncol = 2)
+plot1 <- car_num %>% ggplot()+geom_histogram(aes(age, ..density..), bins=15)+geom_density(aes(age))+ylab('')+scale_x_log10()
+#print(plot1)
+
+plot2 <- car_num %>% ggplot()+geom_histogram(aes(km_driven, ..density..), bins=30)+geom_density(aes(km_driven))+theme(axis.text.x = element_text(angle = 10))+ylab('')+scale_x_log10()
+
+#plot3 <- car_num %>% ggplot()+geom_histogram(aes(seats, ..density..), bins=)+geom_density#(aes(seats))+ylab('')+scale_x_log10()
+#print(plot3)
+
+plot4 <- car_num %>% ggplot()+geom_histogram(aes(engine_CC, ..density..), bins=30)+geom_density(aes(engine_CC))+ylab('')+scale_x_log10()
+#print(plot4)
+
+plot5 <- car_num %>% ggplot()+geom_histogram(aes(max_power_bhp, ..density..), bins=30)+geom_density(aes(max_power_bhp))+ylab('')+scale_x_log10()
+#print(plot5)
+
+grid.arrange(plot1, plot2, plot4, plot5, ncol = 2,
+             top = "Istogrammi delle distribuzioni delle variabili esplicative quantitative \n dopo l'applicazione della trasformazione logaritmica",
+             left = "Densità"
+             )
 ```
 
-Tutte le variabili numeriche considerate, tranne yaer, sembrano assumere una distribuzione più simmetrica se applicata la trasformazione logaritmica
+Viene applicata la trasformazione logaritmica a `age`, `engine_CC` e `max_power_bhp` perchè applicando la forma della trasformazione logaritmica la distribuzione migliora sia dal punto di vista della simmetria che della curtosi
 
 ```{r trasformazione logaritmica}
-'year'
-'selling_price'
-'km_driven'
-'engine(CC)'
-'max_power(bhp)'
+car <- add_column(car, log_selling_price = log(car$selling_price), .after = "selling_price")
+car <- add_column(car, log_age = log(car$age), .after = "age")
+car <- add_column(car, log_max_power_bhp = log(car$max_power_bhp), .after = "max_power_bhp")
+car <- add_column(car, log_engine_CC = log(car$engine_CC), .after = "engine_CC")
+
+car_num <- add_column(car_num, log_selling_price = log(car_num$selling_price), .after = "selling_price")
+car_num <- add_column(car_num, log_age = log(car_num$age), .after = "age")
+car_num <- add_column(car_num, log_max_power_bhp = log(car_num$max_power_bhp), .after = "max_power_bhp")
+car_num <- add_column(car_num, log_engine_CC = log(car_num$engine_CC), .after = "engine_CC")
 ```
 
-### Valuto la presenza di outliers
+## Analisi delle correlazioni 
 
-```{r outliers, include = False}
-#Boxplot 
-par(mfrow=c(2,3))
-#summary(car_num)
-for (i in names(car_num)) {
-  boxplot(car_num[[i]], xlab = i, main = '')
-}
-par(mfrow=c(1,1))
-```
-
-```{r boxplot log, include = False}
-#istogrammi 
-par(mfrow=c(2,2))
-for (i in c('selling_price','km_driven','engine(CC)','max_power(bhp)')) {
-  boxplot(log(car_num[[i]]), xlab = i, main = '')
-}
-par(mfrow=c(1,1))
-```
-
-#### Correlazioni
+Visualizzo possibili correlazioni osservando i *pair plots* tra le variabil quantitative.\
+Al fine di rendere più agile la rappresentazione grafica viene selezionato tramite *simple random sampling* un campione di 500 unità statistiche del dataset originale.
 
 ```{r correlazioni}
+# Aggiorno il vettore delle colonne numeriche di car
+car_nums_colnames_log <- c('log_age','log_selling_price','km_driven','log_engine_CC','log_max_power_bhp', 'seats')
 # Prendo un campione di osservazioni per rendere più agile la rappresentazione grafica:
 leggero <- car[sample(nrow(car), 500), ]
+# Matrice dei diagrammi di dispersione: (non serve usare le variabili trasformate perchè la correlazione non cambia)
+pairs(leggero[, car_nums_colnames_log])
+cor(car[ ,car_nums_colnames_log])
+```
 
-# Matrice dei diagrammi di dispersione:
-pairs(leggero[, car_nums_colnames])
-cor(car[ ,car_nums_colnames])
+Al fine di evidenziare le correlazioni osservo i *coefficienti di correlazione di Pearson*
+
+```{r Pearson}
+ggcorr(car[,car_nums_colnames_log], label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
+
 ```
 
 # Statistica inferenziale
