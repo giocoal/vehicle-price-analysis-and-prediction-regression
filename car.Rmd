@@ -19,6 +19,7 @@ library(mice)
 library(caret)
 library(ggcorrplot)
 library(GGally) #Per il ggcorr()
+library(DiscriMiner) # Per il correlation ratio
 library(psych)
 library(ggrepel)
 library(gridExtra)
@@ -396,22 +397,26 @@ print(p)
 
 Sono presentati i Boxplot delle distribuzioni di `selling_price` in funzione del tipo di `fuel`. Per ogni distribuzione, mediante l'utilizzo di linee orizzontati sono rappresentati rispettivamente (partendo dal basso) il primo quartile, la mediana e il terzo quartile. Viene inoltre aggiunta, sfruttando `stat_summary` la media, rappresentata da un punto di colore rosso.
 
-Dalle distribuzioni si evince come, in media, il prezzo di vendita di una macchina a GPL usata risulti essere il minore. Invece, per le auto a Diesel, si ha una concentrazione di osservazioni a valori di `selling_price` maggiori e un prezzo medio maggiore rispetto a auto con altre tipologie di carburante.
+Dalle distribuzioni si evince come:
 
-Effettuiamo il test di indipendenza *Fisher's Exact Test* per verificare l'indipendenza tra `selling_price` e `fuel`:
+-   in media e in mediana, il prezzo di vendita di una macchina a GPL usata risulti essere il minore. Invece, per le auto a Diesel, si ha una concentrazione di osservazioni a valori di `selling_price` maggiori e un prezzo medio maggiore rispetto a auto con altre tipologie di carburante.
 
-```{r tabelle di contingenza e test chi-quadrato}
-# Voglio verificare con il test chi-quadrato l'indipendenza tra le distribuzioni
-# voglio vedere se ci sia dipendenza tra selling_price e il tipo di carburante
-# Il test resituisce un warning perchè i valori delle celle della tabella di contingenza sono bassi
-#ggplot_build(p)$data[[1]]
-#table(car$log_selling_price, car$fuel)
-chisq_price_fuel <- fisher.test(car$log_selling_price, car$fuel, simulate.p.value = TRUE)
-chisq_price_fuel
-#chisq_price_fuel$observed
+Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
+
+```{r rapporto di correlaizone fuel}
+corRatio(car$log_selling_price, car$fuel)
 ```
 
-Il valore del p-value, minore del livello di significatività (0.05), fa si che sia rifiutata l'ipotesi nulla e concludiamo che le due variabili non siano indipendenti.
+Il valore ottenuto evidenzia dipendenza in media molto leggera.
+
+Al fine di verificare la presenza di indipendenza in distribuzione calcoliamo *l'indice di connessione chi-quadrato* tra `log_selling_price` e `fuel`:
+
+```{r indice di connessione}
+chisq_price_fuel <- chisq.test(car$log_selling_price, car$fuel, simulate.p.value = TRUE)
+chisq_price_fuel$statistic
+```
+
+Il valore dell'indice di connessione, maggiore di zero, suggerisce la presenza di dipendenza in distribuzione.
 
 ### Tipo di proprietario: `owner`
 
@@ -421,25 +426,104 @@ print(p1)
 
 ```
 
-Dalle distribuzioni si evince come, in media, il prezzo di vendita di un'automobile usata tenda a diminuire all'aumentare del numero di precedenti proprietari dell'auto (quindi a ogni passaggio di proprietà).
+Dalle distribuzioni si evince come:
 
-Effettuiamo il test di indipendenza *Fisher's Exact Test* per verificare l'indipendenza tra `selling_price` e `owner`:
+-   in media e in mediana, il prezzo di vendita di un'automobile usata tenda a diminuire all'aumentare del numero di precedenti proprietari dell'auto (sembra quindi ci sia una dipendenza in media tra `log_selling_price` e `owner`.
 
-```{r test di fisher esatto}
-chisq_price_owner <- fisher.test(car$log_selling_price, car$owner, simulate.p.value = TRUE)
-chisq_price_owner
+Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
+
+```{r rapporto di correlaizone owner}
+corRatio(car$log_selling_price, car$owner)
 ```
 
-Il valore del p-value, minore del livello di significatività (0.05), fa si che sia rifiutata l'ipotesi nulla e concludiamo che le due variabili non siano indipendenti.
+Il valore ottenuto evidenzia una leggera dipendenza in media.
 
-### Distribuzione delle marche di auto (`make`) nel mercato dell'usato
+Al fine di verificare la presenza di indipendenza in distribuzione calcoliamo *l'indice di connessione chi-quadrato* tra `log_selling_price` e `owner`:
 
-```{r make boxplot}
-car %>% ggplot(aes(make, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```{r indice di connessione}
+chisq_price_owner <- chisq.test(car$log_selling_price, car$owner, simulate.p.value = TRUE)
+chisq_price_owner$statistic
+```
+
+Il valore dell'indice di connessione, maggiore di zero, suggerisce la presenza di dipendenza in distribuzione.
+
+### Distribuzione delle marche di auto (`make`)
+
+Visualiziamo la distribuzione delle marche di auto usate vendute con l'ausilio di un grafico a barre, al fine di avere una visualizzazione più agile escludiamo le marche con frequenza assoluta minore di 90.
+
+```{r make boxplot count}
+car %>% group_by(make) %>% count() %>% arrange(desc(n)) %>% ggplot() + geom_col(aes(x=n,y=reorder(make,n)), show.legend = F)+
+labs(title = 'Distribuzione marche di auto ordinate per frequenza assoluta',
+     subtitle = '',
+     x= 'Frequenza Assoluta',
+     y='make')
+```
+
+Osserviamo invece ora la distribuzione di `selling price` condizionata a `make` attraverso dei boxplot. Nei boxplot viene inoltre rappresentata la dispersione dei valori di `selling_price` con lo scopo principale di evidenziareil numero di auto di una specifica marca presenti nel dataset.
+
+```{r selling_price make}
+car %>% ggplot(aes(reorder(make, selling_price, median), selling_price))+geom_boxplot()+geom_jitter(alpha=0.02)+geom_hline(aes(yintercept=median(selling_price)))+coord_flip()+xlab('make (marche ordinate per prezzo mediano)')+ylab('selling_price')+theme(aspect.ratio=1)+scale_y_log10()
+```
+
+Dalla visualizzazione possiamo dedurre come le auto usate di marche di lusso non abbiano un mercato particolarmente ampio, mentre le marche di auto non di lusso, con un prezzo mediano inferiore, vengono vendute maggiormente.
+
+### Tipo di proprietario: `transmission`
+
+```{r tipo di cambio}
+car %>% ggplot(aes(transmission, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 0, hjust = 1))+stat_summary(fun.y=mean, geom="point", shape=20, size=3, color="red", fill="red")
 
 ```
 
-### 
+Dalle distribuzioni si evince come:
+
+-   Il numero di auto usate vendute che presentano cambio manuale sia significativamente maggiore di quelle con cambio automatico
+-   In media e in mediana, il prezzo di vendita di un'automobile sembra essere maggiore per le auto dotate di cambio automatico (sembra ci sia una dipendenza in media tra la variabile `selling_price` e `transmission`)
+
+Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
+
+```{r rapporto di correlaizone transmission}
+corRatio(car$log_selling_price, car$transmission)
+```
+
+Il valore ottenuto evidenzia una moderata dipendenza in media.
+
+Al fine di verificare la presenza di indipendenza in distribuzione calcoliamo *l'indice di connessione chi-quadrati* tra `log_selling_price` e `transmission`:
+
+```{r indice di connessione}
+chisq_price_transmission <- chisq.test(car$log_selling_price, car$transmission, simulate.p.value = TRUE)
+chisq_price_transmission$statistic
+```
+
+Il valore dell'indice di connessione, maggiore di zero, suggerisce la presenza di dipendenza in distribuzione.
+
+### Tipo di venditore: `seller_type`
+
+```{r tipo di cambio}
+car %>% ggplot(aes(seller_type, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 0, hjust = 1))+stat_summary(fun.y=mean, geom="point", shape=20, size=3, color="red", fill="red")
+
+```
+
+Dalle distribuzioni si evince come:
+
+-   Il numero di auto usate vendute che presentano cambio manuale sia significativamente maggiore di quelle con cambio automatico
+-   In media e in mediana, il prezzo di vendita di un'automobile sembra essere maggiore per le auto dotate di cambio automatico (sembra esserci una certa dipendenza in media tra `log_selling_price` e `seller_type`)
+
+Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
+
+```{r rapporto di correlazione transmission}
+corRatio(car$log_selling_price, car$seller_type)
+```
+
+Il valore ottenuto evidenzia una leggera dipendenza in media.
+
+Al fine di verificare la presenza di indipendenza in distribuzione calcoliamo *l'indice di connessione chi-quadrati* tra `log_selling_price` e `seller_type`:
+
+```{r indice di connessione}
+chisq_price_seller_type <- chisq.test(car$log_selling_price, car$seller_type, simulate.p.value = TRUE)
+chisq_price_transmission$statistic
+```
+
+Il valore dell'indice di connessione, maggiore di zero, suggerisce la presenza di dipendenza in distribuzione.
 
 ## Analisi delle correlazioni
 
@@ -485,6 +569,8 @@ Per quanto riguarda le associazioni tra le variabili esplicative, si evidenziano
 
 # Statistica inferenziale
 
+## Preparazione
+
 ### Variabili dummy
 
 ```{r da variabili fattoriali a variabili dummy}
@@ -515,7 +601,7 @@ car_dummy <-cbind(car_dummy,dummy_temp)
 head(car_dummy)
 ```
 
-### Divido il dataset in Training e Test sets
+### Training e Test sets
 
 ```{r split dataset in Training e Test sets}
 set.seed(100)
