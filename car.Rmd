@@ -569,6 +569,8 @@ Per quanto riguarda le associazioni tra le variabili esplicative, si evidenziano
 
 # Statistica inferenziale
 
+## Preparazione
+
 ### Variabili dummy
 
 ```{r da variabili fattoriali a variabili dummy}
@@ -599,7 +601,7 @@ car_dummy <-cbind(car_dummy,dummy_temp)
 head(car_dummy)
 ```
 
-### Divido il dataset in Training e Test sets
+### Training e Test sets
 
 ```{r split dataset in Training e Test sets}
 set.seed(100)
