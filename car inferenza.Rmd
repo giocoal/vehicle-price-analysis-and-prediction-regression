@@ -353,8 +353,71 @@ train_ind<-sample(1:nrow(car_dummy),0.8*nrow(car_dummy))
 
 train_set<-car_dummy[train_ind,]
 test_set <-car_dummy[-train_ind,]
+
+dim(train_set)
+dim(test_set)
 ```
 
+### regressione lineare multipla
+#utilizzo la colonna selling price perchè è quella su cui vogliamo fare la previsione
+#facendo la summary si nota che 
+```{r regressione lineare multipla}
+train_lm<-lm(log(selling_price) ~.,data = train_set)
+summary(train_lm)
+
+```
+
+#cerco di aumenare l'R2 eliminando qualche colonna del training set in modo tale da mantenere solo le colonne che migliorano il modello ma anche eliminando le colonne meno significative l'R2 migliora cosi poco da poterle definire come irrilevanti da eliminare
+```{r eliminazione di alcune colonne per migliorare l'R2}
+train_lm1<-lm(log(selling_price) ~.-year,data = train_set)
+summary(train_lm1) #si abbassa l'R2 quindi lasciare year
+
+train_lm2<-lm(log(selling_price) ~.-km_driven ,data = train_set)
+summary(train_lm2)#si abbassa di poco
+
+train_lm3<-lm(log(selling_price) ~.-engine_CC ,data = train_set)
+summary(train_lm3)# si abbassa
+
+train_lm4<-lm(log(selling_price) ~.-max_power_bhp ,data = train_set)
+summary(train_lm4)# si abbassa
+
+train_lm5<-lm(log(selling_price) ~.-transmission ,data = train_set)
+summary(train_lm5)# si abbassa
+
+train_lm6<-lm(log(selling_price) ~.-fuelLPG -seats -fuelCNG,data = train_set)
+summary(train_lm6)# aumenta di pochissimo
+
+train_lm7<-lm(log(selling_price) ~.-year -max_power_bhp - engine_CC,data = train_set)
+summary(train_lm7)# si abbassa tantissimo per cui prenderei queste tre colonne come migliori
+
+train_lm8<-lm(log(selling_price) ~.-km_driven -transmission -fuelPetrol,data = train_set)
+summary(train_lm8)# è sempre alto l'R2 ma non c'è cosi tanta differenza con quello di partenza, però cosi ottengo dei valori di t test abbastanza positivi
+
+```
+
+#considero più modelli e li confronto utilizzando ANOVA. Adotto anche questa tecnica per dimostrare che i due modelli non hanno praticamente nulla di diverso e possono essere considerati praticamente come uguali e identicamente paragonabili anche sulla base dell'RSS
+```{r confronto di più modelli tramite ANOVA}
+anova(train_lm,train_lm6)
+
+```
+
+
+### stabilire ipotesi nulla e ipotesi alternativa
+### analisi dei residui
+```{r calcolo dei residui}
+
+
+```
+
+
+
+
+
+
+
+
+
+#######  da usare solo se serve ma non utile per ora
 \#applico un'analisi di regressione e aggiungo un numero di colonne scelte a caso che poi andranno eliminate e non valutate per l'analisi solo per poter utilizzare il comando vif per lo studio della multicollinearità. E' giusto???  #### car_dummy non va unito al dataset originale con le colonne cambiate in variabili dummy?
 
 ```{r analisi di regressione del modello di training}
@@ -382,7 +445,7 @@ data.frame(vif(test_lm))
 #Secondo la regola del valore VIF, un valore di VIF maggiore di 10 sta ad indicare che la multicollinearità può costare qualche problema al dataset. Nella nostra analisi possiamo scoprire che nessuna variabile supera nemmeno di poco il valore 10. Tutte le variabili prese in considerazione infatti non mostrano alcun problema significativo. Dalla formula di VIF sappiamo che il valore minimo di VIF è 1 e per questo set di dati la maggior parte dei valori è vicina a 1.
 
 
-####### controllare se è corretto ############
+
 
 
 #Creo una variabile cars_compr in cui permetto al modello di comprendere qual è il training set che sto utilizzando, qual è il predittore e quale variabile stiamo cercando di prevedere. Normalizzo tutti i predittore cosi da avere deviazione standard 1 e media 0. Infine creo sia un'altra variabile cars_specif che permetta al modello di sapere quale modello di regressione stiamo utilizzando, applico un vfold_cv cosi da separare i dati in 5 gruppi di ugual misura e un workflow dove racchiudo tutti i passaggi detti fino ad ora
@@ -408,6 +471,8 @@ cars_workflow
 
 ```
 
+
+#questo per il test set
 #installare pacchetto kknn per SML
 #Successivamente, creo un tibble di valori neighbords scelti in un range da 300 a 600 con una step_function di +3 e successivamente utilizzo le funzioni tune_grid() e collect_metrics() per ottenere le medie di un certo numero di neighbords. Eseguo questo passaggio per ottenere il numero di neighbords che mi da il valore minimo dell'RMD (root mean square).
 ```{r creazione di una tibble di valori neighbords per estrarre il valore con l'RDM più basso}
@@ -423,6 +488,36 @@ head(cars_results)
 
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
