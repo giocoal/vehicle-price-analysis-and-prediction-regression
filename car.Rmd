@@ -19,6 +19,7 @@ library(mice)
 library(caret)
 library(ggcorrplot)
 library(GGally) #Per il ggcorr()
+library(DiscriMiner) # Per il correlation ratio
 library(psych)
 library(ggrepel)
 library(gridExtra)
@@ -159,8 +160,7 @@ for (i in names(car_num)) {
 par(mfrow=c(1,1))
 ```
 
-Tutte le variabili presentano un numero elevato di sospetti outliers. In particolare, tutte le variabili presentano un certo numero di osservazioni classificate come potenziali valori anomali perchè si trovano al di sopra del baffo superiore del boxplot, la cui posizione è definita come $q_{0.75} + 1.5 \cdot IQR$ , dove IQR è il range interquartile.
-Proviamo a escludere dai potenziali outlier i *mild outlier* e andiamo invece solo a considerare gli *extreme outlier*, aumentando il range di osservazioni incluse nei baffi del boxplot da$I = [q_{0.25} - 1.5 \cdot IQR; q_{0.75} + 1.5 \cdot IQR]$ a $I = [q_{0.25} - 3 \cdot IQR; q_{0.75} + 3 \cdot IQR]$
+Tutte le variabili presentano un numero elevato di sospetti outliers. In particolare, tutte le variabili presentano un certo numero di osservazioni classificate come potenziali valori anomali perchè si trovano al di sopra del baffo superiore del boxplot, la cui posizione è definita come $q_{0.75} + 1.5 \cdot IQR$ , dove IQR è il range interquartile. Proviamo a escludere dai potenziali outlier i *mild outlier* e andiamo invece solo a considerare gli *extreme outlier*, aumentando il range di osservazioni incluse nei baffi del boxplot da$I = [q_{0.25} - 1.5 \cdot IQR; q_{0.75} + 1.5 \cdot IQR]$ a $I = [q_{0.25} - 3 \cdot IQR; q_{0.75} + 3 \cdot IQR]$
 
 Inoltre, dato che gli outlier sono solo osservazioni che si trovano al di sopra del baffo superiore dei boxplot, proviamo ad applicare una trasformazione logaritmica.
 
@@ -385,9 +385,149 @@ car_num <- add_column(car_num, log_max_power_bhp = log(car_num$max_power_bhp), .
 car_num <- add_column(car_num, log_engine_CC = log(car_num$engine_CC), .after = "engine_CC")
 ```
 
-## Analisi delle correlazioni 
+## Analisi distirbuzionale variabili qualitative
 
-Visualizzo possibili correlazioni osservando i *pair plots* tra le variabil quantitative.\
+### `fuel`: tipo di carburante
+
+```{r tipo di carburante}
+# coef = 3 indica la lunghezza dei baffi come multipli dell'IQR (porto da 1.5 a 4)
+p <- car %>% ggplot(aes(fuel, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 0, hjust = 1))+stat_summary(fun.y=mean, geom="point", shape=20, size=3, color="red", fill="red")
+print(p)
+```
+
+Sono presentati i Boxplot delle distribuzioni di `selling_price` in funzione del tipo di `fuel`. Per ogni distribuzione, mediante l'utilizzo di linee orizzontati sono rappresentati rispettivamente (partendo dal basso) il primo quartile, la mediana e il terzo quartile. Viene inoltre aggiunta, sfruttando `stat_summary` la media, rappresentata da un punto di colore rosso.
+
+Dalle distribuzioni si evince come:
+
+-   in media e in mediana, il prezzo di vendita di una macchina a GPL usata risulti essere il minore. Invece, per le auto a Diesel, si ha una concentrazione di osservazioni a valori di `selling_price` maggiori e un prezzo medio maggiore rispetto a auto con altre tipologie di carburante.
+
+Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
+
+```{r rapporto di correlaizone fuel}
+corRatio(car$log_selling_price, car$fuel)
+```
+
+Il valore ottenuto evidenzia dipendenza in media molto leggera.
+
+Al fine di verificare la presenza di indipendenza in distribuzione calcoliamo *l'indice di connessione chi-quadrato* tra `log_selling_price` e `fuel`:
+
+```{r indice di connessione}
+chisq_price_fuel <- chisq.test(car$log_selling_price, car$fuel, simulate.p.value = TRUE)
+chisq_price_fuel$statistic
+```
+
+Il valore dell'indice di connessione, maggiore di zero, suggerisce la presenza di dipendenza in distribuzione.
+
+### Tipo di proprietario: `owner`
+
+```{r tipo di proprietario}
+p1 <- car %>% ggplot(aes(owner, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 0, hjust = 1))+stat_summary(fun.y=mean, geom="point", shape=20, size=3, color="red", fill="red")+theme(axis.text.x = element_text(angle = 20, hjust = 1))
+print(p1)
+
+```
+
+Dalle distribuzioni si evince come:
+
+-   in media e in mediana, il prezzo di vendita di un'automobile usata tenda a diminuire all'aumentare del numero di precedenti proprietari dell'auto (sembra quindi ci sia una dipendenza in media tra `log_selling_price` e `owner`.
+
+Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
+
+```{r rapporto di correlaizone owner}
+corRatio(car$log_selling_price, car$owner)
+```
+
+Il valore ottenuto evidenzia una leggera dipendenza in media.
+
+Al fine di verificare la presenza di indipendenza in distribuzione calcoliamo *l'indice di connessione chi-quadrato* tra `log_selling_price` e `owner`:
+
+```{r indice di connessione}
+chisq_price_owner <- chisq.test(car$log_selling_price, car$owner, simulate.p.value = TRUE)
+chisq_price_owner$statistic
+```
+
+Il valore dell'indice di connessione, maggiore di zero, suggerisce la presenza di dipendenza in distribuzione.
+
+### Distribuzione delle marche di auto (`make`)
+
+Visualiziamo la distribuzione delle marche di auto usate vendute con l'ausilio di un grafico a barre, al fine di avere una visualizzazione più agile escludiamo le marche con frequenza assoluta minore di 90.
+
+```{r make boxplot count}
+car %>% group_by(make) %>% count() %>% arrange(desc(n)) %>% ggplot() + geom_col(aes(x=n,y=reorder(make,n)), show.legend = F)+
+labs(title = 'Distribuzione marche di auto ordinate per frequenza assoluta',
+     subtitle = '',
+     x= 'Frequenza Assoluta',
+     y='make')
+```
+
+Osserviamo invece ora la distribuzione di `selling price` condizionata a `make` attraverso dei boxplot. Nei boxplot viene inoltre rappresentata la dispersione dei valori di `selling_price` con lo scopo principale di evidenziareil numero di auto di una specifica marca presenti nel dataset.
+
+```{r selling_price make}
+car %>% ggplot(aes(reorder(make, selling_price, median), selling_price))+geom_boxplot()+geom_jitter(alpha=0.02)+geom_hline(aes(yintercept=median(selling_price)))+coord_flip()+xlab('make (marche ordinate per prezzo mediano)')+ylab('selling_price')+theme(aspect.ratio=1)+scale_y_log10()
+```
+
+Dalla visualizzazione possiamo dedurre come le auto usate di marche di lusso non abbiano un mercato particolarmente ampio, mentre le marche di auto non di lusso, con un prezzo mediano inferiore, vengono vendute maggiormente.
+
+### Tipo di proprietario: `transmission`
+
+```{r tipo di cambio}
+car %>% ggplot(aes(transmission, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 0, hjust = 1))+stat_summary(fun.y=mean, geom="point", shape=20, size=3, color="red", fill="red")
+
+```
+
+Dalle distribuzioni si evince come:
+
+-   Il numero di auto usate vendute che presentano cambio manuale sia significativamente maggiore di quelle con cambio automatico
+-   In media e in mediana, il prezzo di vendita di un'automobile sembra essere maggiore per le auto dotate di cambio automatico (sembra ci sia una dipendenza in media tra la variabile `selling_price` e `transmission`)
+
+Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
+
+```{r rapporto di correlaizone transmission}
+corRatio(car$log_selling_price, car$transmission)
+```
+
+Il valore ottenuto evidenzia una moderata dipendenza in media.
+
+Al fine di verificare la presenza di indipendenza in distribuzione calcoliamo *l'indice di connessione chi-quadrati* tra `log_selling_price` e `transmission`:
+
+```{r indice di connessione}
+chisq_price_transmission <- chisq.test(car$log_selling_price, car$transmission, simulate.p.value = TRUE)
+chisq_price_transmission$statistic
+```
+
+Il valore dell'indice di connessione, maggiore di zero, suggerisce la presenza di dipendenza in distribuzione.
+
+### Tipo di venditore: `seller_type`
+
+```{r tipo di cambio}
+car %>% ggplot(aes(seller_type, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 0, hjust = 1))+stat_summary(fun.y=mean, geom="point", shape=20, size=3, color="red", fill="red")
+
+```
+
+Dalle distribuzioni si evince come:
+
+-   Il numero di auto usate vendute che presentano cambio manuale sia significativamente maggiore di quelle con cambio automatico
+-   In media e in mediana, il prezzo di vendita di un'automobile sembra essere maggiore per le auto dotate di cambio automatico (sembra esserci una certa dipendenza in media tra `log_selling_price` e `seller_type`)
+
+Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
+
+```{r rapporto di correlazione transmission}
+corRatio(car$log_selling_price, car$seller_type)
+```
+
+Il valore ottenuto evidenzia una leggera dipendenza in media.
+
+Al fine di verificare la presenza di indipendenza in distribuzione calcoliamo *l'indice di connessione chi-quadrati* tra `log_selling_price` e `seller_type`:
+
+```{r indice di connessione}
+chisq_price_seller_type <- chisq.test(car$log_selling_price, car$seller_type, simulate.p.value = TRUE)
+chisq_price_transmission$statistic
+```
+
+Il valore dell'indice di connessione, maggiore di zero, suggerisce la presenza di dipendenza in distribuzione.
+
+## Analisi delle correlazioni
+
+Visualizzo possibili correlazioni osservando i *pair plots* (diagrammi a dispersione accoppiati) tra le variabil quantitative.\
 Al fine di rendere più agile la rappresentazione grafica viene selezionato tramite *simple random sampling* un campione di 500 unità statistiche del dataset originale.
 
 ```{r correlazioni}
@@ -407,7 +547,29 @@ ggcorr(car[,car_nums_colnames_log], label = TRUE, label_size = 2.9, hjust = 1, l
 
 ```
 
+Osservando i *coefficienti di correlazione di Pearson* deduciamo che la variabile target `log_selling_price` presenza:
+
+-   Debole associazione positiva con la variabile `seats`
+
+-   Debole associazione negativa con la variabile `km_driven`
+
+-   Moderata associazione positiva con la variabile `log_engine_CC`
+
+-   **Forte associazione positiva** con la variabile `log_max_power_bhp` (0.7)
+
+-   **Forte associazione negativa** con la variabile `log_age` (-0.7)
+
+Per quanto riguarda le associazioni tra le variabili esplicative, si evidenziano alcuni problemi collegati a una probabile **multicollinarità**:
+
+-   `seats` presenta forte associazione positiva con `log_engine_CC`
+
+-   `log_max_power_bhp` presenta forte associazione positiva con `log_engine_CC`
+
+-   `km_driven` presenta una moderata associazione con `log_age`
+
 # Statistica inferenziale
+
+## Preparazione
 
 ### Variabili dummy
 
@@ -439,7 +601,7 @@ car_dummy <-cbind(car_dummy,dummy_temp)
 head(car_dummy)
 ```
 
-### Divido il dataset in Training e Test sets
+### Training e Test sets
 
 ```{r split dataset in Training e Test sets}
 set.seed(100)
