@@ -605,12 +605,21 @@ head(car_dummy)
 
 ### Training e Test sets
 
+Divido il nuovo dataset creato al punto precedente in due con rapporto 80 20 cosí da poter allenare il modello sulla partizione piú grande (`train_set`) e poterlo poi verificare su quello piú piccolo (`test_set`).
+
 ```{r split dataset in Training e Test sets}
 set.seed(100)
 train_ind<-sample(1:nrow(car_dummy),0.8*nrow(car_dummy))
 
-train_set<-car_dummy[train_ind,]
-test_set <-car_dummy[-train_ind,]
+train_set <- car_dummy[train_ind,]
+test_set <- car_dummy[-train_ind,]
+```
+
+Ció che risulta sono due nuovi dataframe con 6292 e 1573 righe.
+
+```{r dimensioni train_set e test_set}
+dim(train_set)
+dim(test_set)
 ```
 
 ## Regressione lineare
@@ -626,9 +635,17 @@ Ció che risulta é un modello con un valore dell'R quadro aggiustato elevato `R
 
 Dalla tabella dei coefficienti si può osservare anche che dei molti attributi dovuti alla marca dell'auto quelli che presentano la significatività maggiore sono quelli corrispondenti alle macchine più lussuose. Questa cosa è dovuta al fatto che il prezzo di queste auto si discostava molto dalle altre a parità di motore e utilizzo.
 
+```{r plot modello completo}
+par(mfrow=c(2,2))
+plot(modello_completo) #da sistemare warning
+par(mfrow=c(1,1))
+```
+
+Da questi grafici si vede che effettivamente ci sono dei problemi nel modello, in particolare nel `Normal Q-Q` si vede gli `Strandardized residual` a sinistra (con `Theoretical Quantiles` tra -4 e -2) siano piú bassi del valore teorico. Anche nel grafico della `Scale-Location` si vedono delle anomalie
+
 ### Feature selection
 
-Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilitá e ridurre il problema dell'overfitting.
+Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi appena
 
 Guardando il grafico delle correlazioni della sezione precendente é facile notare come `log_age` e `log_max_power_bhp` siano i due attributi che più influenzano `log_selling_price` rispettivamente con valore di `0.74` e `0.67`. Scegliamo quindi `log_max_power_bhp` come primo attributo con cui costruire il modello.
 
@@ -640,8 +657,7 @@ summary(modello_minimo)
 Come ci aspettavamo l'attributo `log_max_power_bhp` è molto significativo per la descrizione del modello con un p-value molto basso e un R quadro comunque abbastanza elevato `Adjusted R-squared:  0.5493.` Vediamo ora qui di seguito la rappresentazione grafica della retta trovata.
 
 ```{r grafico modello semplificato}
-plot(car$log_selling_price ~ car$log_max_power_bhp)
-abline(coef(modello_minimo), col="red", lwd=3)
+ggplot(train_set, aes(x = log_max_power_bhp, y = log_selling_price)) + geom_point() + stat_smooth(method = "lm", col = "red")
 ```
 
 Cerchiamo ora di raffinare il modello con un processo di forward selection. Per farlo ricorriamo alla funzione stepAIC dato il grande numero di attributi presenti. Sfruttiamo il `modello_minimo` appena realizzato, settiamo `direction = "forward"` e indichiamo come scope il `modello_completo`.
@@ -692,7 +708,7 @@ modello_3 <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age + fuel
 summary(modello_3)
 ```
 
-Dato che `Adjusted R-squared:  0.8917` é sostasnzialmente immutato rimuoviamo ancora gli ultimi 5 attributi (`makeDatsun, makeLand, makeFord, fuelCNG, makeFiat`) che sono quelli che mostrano significativitá un po' piú bassa.
+Dato che `Adjusted R-squared:  0.8917` è sostanzialmente immutato rimuoviamo ancora gli ultimi 5 attributi (`makeDatsun, makeLand, makeFord, fuelCNG, makeFiat`) che sono quelli che mostrano significatività un po' più bassa.
 
 ```{r modello 4}
 modello_4 <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + log_engine_CC + ownerFourth...Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeMaruti + makeVolvo + makeAudi, data = train_set)
@@ -700,9 +716,15 @@ modello_4 <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age + fuel
 summary(modello_4)
 ```
 
-Il valore dell'R quadro aggiustato é sceso leggermente a `Adjusted R-squared:  0.8882` ma resta comunque molto alto. Siamo rimasti quindi con 20 attributi che presentano tutti la massima significativitá.
+Il valore dell'R quadro aggiustato è sceso leggermente a `Adjusted R-squared:  0.8882` ma resta comunque molto alto. Siamo rimasti quindi con 20 attributi che presentano tutti la massima significatività.
 
-Procediamo ora con il test F. Utilizzando ora la funzione Anova confrontiamo questo ultimo modello con quello ottenuto dal processo di stepAIC per vedere se la rimozione dei 18 attributi che abbiamo fatto é giustificata.
+```{r}
+par(mfrow=c(2,2))
+plot(modello_4)
+par(mfrow=c(1,1))
+```
+
+Procediamo ora con il test F. Utilizzando ora la funzione Anova confrontiamo questo ultimo modello con quello ottenuto dal processo di stepAIC per vedere se la rimozione dei 18 attributi che abbiamo fatto è giustificata.
 
 ```{r confronto modello_4 con modello_stepAIC}
 anova(modello_stepAIC, modello_4)
