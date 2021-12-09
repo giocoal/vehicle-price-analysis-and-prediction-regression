@@ -678,11 +678,9 @@ modello_stepAIC <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age 
 summary(modello_stepAIC)
 ```
 
-La rimozione di quelli attributi ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8929`, cioé praticamente identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance.
+La rimozione di quelli attributi ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8929`, cioé praticamente identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance. Nel modello sono presenti peró ancora diversi attributi che sarebbe meglio rimuovere poiché collineari o insignificanti.
 
-I coefficienti nella tabella sono presentati nell'ordine in cui sono stati aggiunti nel processo di stepAIC, possiamo notare infatti che quelli verso il basso presentano una significatività non molto elevata. Dato l'ancora alto numero di attributi decidiamo di essere piú stringenti e di rimuovere quegli attiributi che non presentano una significatività molto elevata.
-
-La rimozione andrebbe eseguita un attributo alla volta ma dato che vogliamo ridurre di molto la dimensionalitá inizieremo con togliere in blocco i 7 attributi con `significativitá > 0.05`. Gli attributi rimossi sono `makeKia, makeSkoda, ownerTest.Drive.Car, makeOpel, makeJeep, makeForce, seller_typeTrustmark.Dealer`.
+I coefficienti nella tabella sono presentati nell'ordine in cui sono stati aggiunti nel processo di stepAIC, possiamo notare infatti che quelli verso il basso presentano una significatività non molto elevata. Dato l'ancora alto numero di attributi decidiamo di essere piú stringenti e di rimuovere quegli attiributi che non presentano una significatività molto elevata. La rimozione andrebbe eseguita un attributo alla volta ma dato che vogliamo ridurre di molto la dimensionalitá inizieremo con togliere in blocco i 7 attributi con `significativitá > 0.05`. Gli attributi rimossi sono `makeKia, makeSkoda, ownerTest.Drive.Car, makeOpel, makeJeep, makeForce, seller_typeTrustmark.Dealer`.
 
 ```{r modello 1}
 modello_1 <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + transmission + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + log_engine_CC + ownerFourth...Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeMaruti + makeVolvo + makeAudi + makeDatsun + makeLand + makeFord + fuelCNG + makeFiat + seller_typeDealer + makeMahindra + makeVolkswagen + makeDaewoo + fuelLPG, data = train_set)
