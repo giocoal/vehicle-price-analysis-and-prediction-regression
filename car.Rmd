@@ -25,7 +25,7 @@ library(ggrepel)
 library(gridExtra)
 library(glmnet)
 library(xgboost)
-library(MASS)
+#library(MASS)
 ```
 
 # Lettura Dataset
@@ -42,7 +42,7 @@ View(car)
 
 # Obiettivo
 
-L'obiettivo di analisi consiste nella definizione di un modello di regressione lineare multipla che permetta di predire il prezzo di vendita di un'automobile usata.
+L'obiettivo di analisi consiste nella definizione di un modello di regressione lineare multipla che permetta di predire il prezzo di vendita di un'automobile usata, quindi la variabile target sarà `selling_price`.
 
 # Preparazione e pulizia del dataset
 
@@ -201,9 +201,10 @@ summary(car)
 ```
 
 -   Il dataset ha 8123 unità statistiche e 13 attributi
--   Individuiamo come variabile target la variabile quantitativa continua `selling_price`
 
 ### Variabile Target: selling_price
+
+La variabile target `selling_price` è quantitativa continua
 
 #### Indicatori Statistici
 
@@ -468,7 +469,7 @@ car %>% ggplot(aes(reorder(make, selling_price, median), selling_price))+geom_bo
 
 Dalla visualizzazione possiamo dedurre come le auto usate di marche di lusso non abbiano un mercato particolarmente ampio, mentre le marche di auto non di lusso, con un prezzo mediano inferiore, vengono vendute maggiormente.
 
-### Tipo di proprietario: `transmission`
+### Cambio automatico vs cambio manuale: `transmission`
 
 ```{r tipo di cambio}
 car %>% ggplot(aes(transmission, log_selling_price))+geom_boxplot(coef = 3)+geom_jitter(alpha=0.05)+theme(axis.text.x = element_text(angle = 0, hjust = 1))+stat_summary(fun.y=mean, geom="point", shape=20, size=3, color="red", fill="red")
@@ -482,7 +483,7 @@ Dalle distribuzioni si evince come:
 
 Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
 
-```{r rapporto di correlaizone transmission}
+```{r rapporto di correlazione transmission}
 corRatio(car$log_selling_price, car$transmission)
 ```
 
@@ -506,7 +507,7 @@ car %>% ggplot(aes(seller_type, log_selling_price))+geom_boxplot(coef = 3)+geom_
 
 Dalle distribuzioni si evince come:
 
--   Il numero di auto usate vendute che presentano cambio manuale sia significativamente maggiore di quelle con cambio automatico
+-   Il numero di auto usate vendute da privati è maggiore di quelle vendute da dealer (venditore) e da trustmark dealer (venditore con garanzia).
 -   In media e in mediana, il prezzo di vendita di un'automobile sembra essere maggiore per le auto dotate di cambio automatico (sembra esserci una certa dipendenza in media tra `log_selling_price` e `seller_type`)
 
 Al fine di verificare la presenza di indipendenza in media calcoliamo il *rapporto di correlazione*
@@ -618,8 +619,8 @@ test_set <- car_dummy[-train_ind,]
 Ció che risulta sono due nuovi dataframe con 6292 e 1573 righe.
 
 ```{r dimensioni train_set e test_set}
-dim(train_set)
-dim(test_set)
+nrow(train_set)
+nrow(test_set)
 ```
 
 ## Regressione lineare
@@ -631,9 +632,9 @@ modello_completo <- lm(log_selling_price ~ ., data=train_set)
 summary(modello_completo)
 ```
 
-Ció che risulta é un modello con un valore dell'R quadro aggiustato elevato `R-squared: 0.893`. Il problema di questo modello però è che molti degli attributi non sono significativi e alcuni di questi sono collineari.
+Ció che risulta é un modello con un valore dell'R quadro aggiustato elevato `R-squared: 0.893` probabilmente dovuto ad un fenomeno di overfitting. Il problema infatti di questo modello però è che molti degli attributi non sono significativi e alcuni di questi sono collineari. (lo verificheremo nella sezione successiva)
 
-Dalla tabella dei coefficienti si può osservare anche che dei molti attributi dovuti alla marca dell'auto quelli che presentano la significatività maggiore sono quelli corrispondenti alle macchine più lussuose. Questa cosa è dovuta al fatto che il prezzo di queste auto si discostava molto dalle altre a parità di motore e utilizzo.
+Dalla tabella dei coefficienti si può osservare anche che dei molti attributi dovuti alla marca dell'auto quelli che presentano la significatività maggiore sono quelli corrispondenti alle macchine più lussuose. Questa cosa è dovuta al fatto che il prezzo di queste auto si discosta molto dalla maggior parte delle altre auto a parità di motore e utilizzo.
 
 ```{r plot modello completo}
 par(mfrow=c(2,2))
@@ -662,7 +663,7 @@ ggplot(train_set, aes(x = log_max_power_bhp, y = log_selling_price)) + geom_poin
 
 Cerchiamo ora di raffinare il modello con un processo di forward selection. Per farlo ricorriamo alla funzione stepAIC dato il grande numero di attributi presenti. Sfruttiamo il `modello_minimo` appena realizzato, settiamo `direction = "forward"` e indichiamo come scope il `modello_completo`.
 
-```{r stepAIC, echo=TRUE, results='hide'}
+```{r stepAIC}
 stepAIC(modello_minimo, direction = "forward", scope = formula(modello_completo))
 ```
 
