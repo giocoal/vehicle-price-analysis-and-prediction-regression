@@ -589,7 +589,7 @@ Per quanto riguarda le associazioni tra le variabili esplicative, si evidenziano
 
 ## Preparazione
 
-Creo un subset delle variabili quantitative e successivamente elimino quelle che causano multicollinearitá (`log_engine_CC` e `seats`).
+Creo un nuovo dataset chiamato `car_dummy` al quale aggiungo le variabili quantitative in forma logaritmica dove necessario. Successivamente elimino gli attributi che sono molto correlati con gli altri presenti e poco correlati con la variabile target (`log_engine_CC` e `seats`).
 
 ```{r subset delle variabili quantitative}
 
@@ -599,7 +599,7 @@ car_dummy <- select(car_dummy, -c('seats', 'log_engine_CC'))
 
 ### Variabili dummy
 
-Al dataset appena creato aggiungo le colonne relative alle diverse modalità delle variabili categoriche. Per ogni attributo vengono generate n-1 nuove colonne dove n è il numero di modalità di quell'attributo.
+Al dataset appena creato aggiungo le colonne relative alle variabili categoriche. Per ogni attributo vengono generate n-1 nuove colonne dove n è il numero di modalità di quel particolare attributo.
 
 ```{r da variabili fattoriali a variabili dummy}
 
