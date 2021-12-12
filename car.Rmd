@@ -762,7 +762,7 @@ par(mfrow=c(1,1))
 
 Procediamo ora con il test F. Utilizzando ora la funzione Anova confrontiamo il modello ottenuto con la funzione stepAIC e quello ottenuto dal processo di stepAIC con parametro k per vedere se la rimozione degli attributi meno significativi con l'uso del parametro k è giustificata.
 
-```{r confronto modello_4 con modello_stepAIC}
+```{r confronto modello_stepAIC con modello_stepAIC_k}
 anova(modello_stepAIC, modello_stepAIC_k)
 ```
 
