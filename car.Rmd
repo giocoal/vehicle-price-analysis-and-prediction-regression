@@ -9,7 +9,7 @@ output:
 
 # Importazione librerie
 
-```{r importazione librerie e opzioni di rendering, include=FALSE}
+```{r importazione librerie e opzioni di rendering, warning=FALSE, include=FALSE}
 
 library(MASS)
 library(readr)
@@ -580,8 +580,8 @@ Per quanto riguarda le associazioni tra le variabili esplicative, si evidenziano
 #T TEST
 #Variable importance
 #F TEST
-#Adjusted R-squared
-#Residual analysis
+#Adjusted R-squared                 quanto bene il modello descrive i dati
+#Residual analysis                  
 #(compare two models with anova)
 
 #Prediction RMSE
@@ -594,7 +594,7 @@ Creo un nuovo dataset chiamato `car_dummy` al quale aggiungo le variabili quanti
 ```{r subset delle variabili quantitative}
 
 car_dummy <- car[,car_nums_colnames_log]
-car_dummy <- select(car_dummy, -c('seats', 'log_engine_CC'))
+car_dummy <- select(car_dummy, -c('seats', 'log_engine_CC', 'km_driven'))
 ```
 
 ### Variabili dummy
@@ -631,11 +631,18 @@ head(car_dummy)
 
 Individuo il numero di righe uguali nel dataset.
 
+##da fare prima?
+
 ```{r}
 sum(duplicated(car_dummy))
+sum(duplicated(car))
 ```
 
-Le righe uguali sono molte ma decidiamo di lasciarle poiché anch'esse portano informazione. Infatti due auto uguali vendute allo stesso prezzo devono avere un peso doppio rispetto ad una riga unica.
+Il fatto che delle righe siano identiche è strano poiché è improbabile delle auto identiche siano dello stesso anno e abbiano esattamente lo stesso prezzo e numero di km. Inoltre non può essere nemmeno lo stesso veicolo rivenduto più volte perché l'attributo `owner` sarebbe diverso. Vedendo l'alto numero di queste righe sospette decidiamo dunque di toglierle dal datset.
+
+```{r}
+car_dummy <- car_dummy[!duplicated(car_dummy),]
+```
 
 ### Training e Test sets
 
@@ -652,11 +659,13 @@ test_set <- car_dummy[-train_ind,]
 Verifico le dimensioni dei due nuovi dataset.
 
 ```{r dimensioni train_set e test_set}
-cat("Numero righe train_set = ", nrow(train_set), "\n")
-cat("Numero righe test_set  = ", nrow(test_set))
+print(paste("Numero righe train_set:", nrow(train_set), sep = " "))
+print(paste("Numero righe test_set: ", nrow(test_set), sep = " "))
 ```
 
 ## Regressione lineare
+
+Per poter eseguire la regressione lineare abbiamo diverse assunzioni da fare .....
 
 Come primo passo realizzo un modello di regressione, sul `train_set` in cui considero tutte le 45 variabili
 
@@ -669,13 +678,22 @@ Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `R
 
 Dalla tabella dei coefficienti si può osservare anche che, dei molti attributi dovuti alla marca dell'auto, quelli che presentano la significatività maggiore sono quelli corrispondenti alle macchine più lussuose. Questa cosa è dovuta al fatto che il prezzo di queste auto si discosta molto dalla maggior parte delle altre auto a parità di motore e utilizzo, in fase di valutazione del prezzo è quindi un parametro da tenere in considerazione.
 
-```{r plot modello completo}
-par(mfrow=c(2,2))
-plot(modello_completo) #da sistemare warning
-par(mfrow=c(1,1))
+Studiamo ora residui del modello generando i diagnostic plots.
+
+```{r plot modello completo, warning=FALSE}
+par(pty="s")
+plot(modello_completo)
 ```
 
-#commento plot
+1.  Linearitá delle relazioni tra variabile dipendente e le variabili indipendenti
+
+2.  Residui distribuiti in modo normale
+
+3.  Omoschedasticitá (varianza costante per i residui)
+
+4.  Indipendenza dei residui
+
+    ##da sitemare
 
 Da questi grafici si vede che effettivamente ci sono dei problemi nel modello, in particolare nel `Normal Q-Q` si vede gli `Strandardized residual` a sinistra (con `Theoretical Quantiles` tra -4 e -2) siano piú bassi del valore teorico. Anche nel grafico della `Scale-Location` si vedono delle anomalie
 
@@ -718,10 +736,9 @@ La rimozione di quelli attributi ha portato il valore dell'R quadro aggiustato a
 
 Andiamo allora a graficare le caratteristiche di questo nuovo modello.
 
-```{r plot modello stepAIC}
-par(mfrow=c(2,2))
+```{r plot modello stepAIC, warning=FALSE}
+par(pty="s")
 plot(modello_stepAIC)
-par(mfrow=c(1,1))
 ```
 
 #commenti grafici
@@ -752,10 +769,9 @@ Il modello è ora composto da 26 attributi molto significativi, il valore dell'R
 
 Anche in questo caso andiamo a mostrare i grafici dei residui del modello trovato.
 
-```{r plot modello stepAIC con parametro k}
-par(mfrow=c(2,2))
+```{r plot modello stepAIC con parametro k, warning=FALSE}
+par(pty="s")
 plot(modello_stepAIC_k)
-par(mfrow=c(1,1))
 ```
 
 #commento grafico
