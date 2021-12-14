@@ -791,3 +791,4 @@ anova(modello_stepAIC, modello_stepAIC_k)
 ### rmse modello con tutti i parametri
 
 ### rmse modello scelto
+######
