@@ -9,8 +9,9 @@ output:
 
 # Importazione librerie
 
-```{r importazione librerie e opzioni di rendering, include=FALSE}
+```{r importazione librerie e opzioni di rendering, warning=FALSE, include=FALSE}
 
+library(MASS)
 library(readr)
 library(tibble)
 library(dplyr)
@@ -25,7 +26,6 @@ library(ggrepel)
 library(gridExtra)
 library(glmnet)
 library(xgboost)
-#library(MASS)
 ```
 
 # Lettura Dataset
@@ -37,7 +37,7 @@ library(xgboost)
 data_path <- "https://raw.githubusercontent.com/giocoal/datasets/main/Car%20details%20v3.csv"
 car <- read_csv(data_path, col_types = 'ciiiffff????i')
 head(data.frame(car))
-View(car)
+#View(car)
 ```
 
 # Obiettivo
@@ -387,7 +387,7 @@ car_num <- add_column(car_num, log_max_power_bhp = log(car_num$max_power_bhp), .
 car_num <- add_column(car_num, log_engine_CC = log(car_num$engine_CC), .after = "engine_CC")
 ```
 
-## Analisi distirbuzionale variabili qualitative
+## Analisi distribuzionale variabili qualitative
 
 ### `fuel`: tipo di carburante
 
@@ -565,20 +565,43 @@ Per quanto riguarda le associazioni tra le variabili esplicative, si evidenziano
 
 -   `seats` presenta forte associazione positiva con `log_engine_CC`
 
+    -   successivamente escluderemo `seats` dalla stima del modello di regressione perché tra le due è la meno correlata con `selling_price`
+
 -   `log_max_power_bhp` presenta forte associazione positiva con `log_engine_CC`
+
+    -   successivamente escluderemo `log_engine_CC` dalla stima del modello di regressione perché tra le due è la meno correlata con `selling_price`
 
 -   `km_driven` presenta una moderata associazione con `log_age`
 
 # Statistica inferenziale
 
+```{r cose da fare}
+
+#T TEST
+#Variable importance
+#F TEST
+#Adjusted R-squared                 quanto bene il modello descrive i dati
+#Residual analysis                  
+#(compare two models with anova)
+
+#Prediction RMSE
+```
+
 ## Preparazione
+
+Creo un nuovo dataset chiamato `car_dummy` al quale aggiungo le variabili quantitative in forma logaritmica dove necessario. Successivamente elimino gli attributi che sono molto correlati con gli altri presenti e poco correlati con la variabile target (`log_engine_CC` e `seats`).
+
+```{r subset delle variabili quantitative}
+
+car_dummy <- car[,car_nums_colnames_log]
+car_dummy <- select(car_dummy, -c('seats', 'log_engine_CC', 'km_driven'))
+```
 
 ### Variabili dummy
 
-```{r da variabili fattoriali a variabili dummy}
+Al dataset appena creato aggiungo le colonne relative alle variabili categoriche. Per ogni attributo vengono generate n-1 nuove colonne dove n è il numero di modalità di quel particolare attributo.
 
-#creo un nuovo dataframe con solo le variabili quantitative logaritmiche
-car_dummy <- car_num[,-c(1,3,6,8)]
+```{r da variabili fattoriali a variabili dummy}
 
 # Aggiungo la variabile fattoriale 'transmission' a car dummy e la converto in numerica (0 corrispode a 'automatic'):
 car_dummy <- cbind(car_dummy,transmission = car$transmission)
@@ -604,9 +627,26 @@ car_dummy <-cbind(car_dummy,dummy_temp)
 head(car_dummy)
 ```
 
+### Righe duplicate nel dataset
+
+Individuo il numero di righe uguali nel dataset.
+
+##da fare prima?
+
+```{r}
+sum(duplicated(car_dummy))
+sum(duplicated(car))
+```
+
+Il fatto che delle righe siano identiche è strano poiché è improbabile delle auto identiche siano dello stesso anno e abbiano esattamente lo stesso prezzo e numero di km. Inoltre non può essere nemmeno lo stesso veicolo rivenduto più volte perché l'attributo `owner` sarebbe diverso. Vedendo l'alto numero di queste righe sospette decidiamo dunque di toglierle dal datset.
+
+```{r}
+car_dummy <- car_dummy[!duplicated(car_dummy),]
+```
+
 ### Training e Test sets
 
-Divido il nuovo dataset creato al punto precedente in due con rapporto 80 20 cosí da poter allenare il modello sulla partizione piú grande (`train_set`) e poterlo poi verificare su quello piú piccolo (`test_set`).
+Divido il nuovo dataset creato al punto precedente in due con rapporto 80 20 così da poter allenare il modello sulla partizione più grande (`train_set`) e poterlo poi verificare su quello piú piccolo (`test_set`).
 
 ```{r split dataset in Training e Test sets}
 set.seed(100)
@@ -616,39 +656,52 @@ train_set <- car_dummy[train_ind,]
 test_set <- car_dummy[-train_ind,]
 ```
 
-Ció che risulta sono due nuovi dataframe con 6292 e 1573 righe.
+Verifico le dimensioni dei due nuovi dataset.
 
 ```{r dimensioni train_set e test_set}
-nrow(train_set)
-nrow(test_set)
+print(paste("Numero righe train_set:", nrow(train_set), sep = " "))
+print(paste("Numero righe test_set: ", nrow(test_set), sep = " "))
 ```
 
 ## Regressione lineare
 
-Realizzo un primo modello di regressione in cui considero tutte le 46 variabili
+Per poter eseguire la regressione lineare abbiamo diverse assunzioni da fare .....
+
+Come primo passo realizzo un modello di regressione, sul `train_set` in cui considero tutte le 45 variabili
 
 ```{r modello completo}
 modello_completo <- lm(log_selling_price ~ ., data=train_set)
 summary(modello_completo)
 ```
 
-Ció che risulta é un modello con un valore dell'R quadro aggiustato elevato `R-squared: 0.893` probabilmente dovuto ad un fenomeno di overfitting. Il problema infatti di questo modello però è che molti degli attributi non sono significativi e alcuni di questi sono collineari. (lo verificheremo nella sezione successiva)
+Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `R-squared: 0.8901`. Il problema di questo modello però è che molti degli attributi non sono significativi e alcuni di questi sono collineari, quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set.
 
-Dalla tabella dei coefficienti si può osservare anche che dei molti attributi dovuti alla marca dell'auto quelli che presentano la significatività maggiore sono quelli corrispondenti alle macchine più lussuose. Questa cosa è dovuta al fatto che il prezzo di queste auto si discosta molto dalla maggior parte delle altre auto a parità di motore e utilizzo.
+Dalla tabella dei coefficienti si può osservare anche che, dei molti attributi dovuti alla marca dell'auto, quelli che presentano la significatività maggiore sono quelli corrispondenti alle macchine più lussuose. Questa cosa è dovuta al fatto che il prezzo di queste auto si discosta molto dalla maggior parte delle altre auto a parità di motore e utilizzo, in fase di valutazione del prezzo è quindi un parametro da tenere in considerazione.
 
-```{r plot modello completo}
-par(mfrow=c(2,2))
-plot(modello_completo) #da sistemare warning
-par(mfrow=c(1,1))
+Studiamo ora residui del modello generando i diagnostic plots.
+
+```{r plot modello completo, warning=FALSE}
+par(pty="s")
+plot(modello_completo)
 ```
+
+1.  Linearitá delle relazioni tra variabile dipendente e le variabili indipendenti
+
+2.  Residui distribuiti in modo normale
+
+3.  Omoschedasticitá (varianza costante per i residui)
+
+4.  Indipendenza dei residui
+
+    ##da sitemare
 
 Da questi grafici si vede che effettivamente ci sono dei problemi nel modello, in particolare nel `Normal Q-Q` si vede gli `Strandardized residual` a sinistra (con `Theoretical Quantiles` tra -4 e -2) siano piú bassi del valore teorico. Anche nel grafico della `Scale-Location` si vedono delle anomalie
 
 ### Feature selection
 
-Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi appena
+Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi presenti.
 
-Guardando il grafico delle correlazioni della sezione precendente é facile notare come `log_age` e `log_max_power_bhp` siano i due attributi che più influenzano `log_selling_price` rispettivamente con valore di `0.74` e `0.67`. Scegliamo quindi `log_max_power_bhp` come primo attributo con cui costruire il modello.
+Guardando la tabella delle correlazioni della sezione "Analisi delle correlazioni" è facile notare come `log_max_power_bhp` e `log_age` siano i due attributi più correlati con `log_selling_price` rispettivamente con valore di `0.74` e `0.67`. Scegliamo quindi `log_max_power_bhp` come primo attributo con cui costruire il modello.
 
 ```{r primo modello con solo log_max_power_bhp}
 modello_minimo <- lm(log_selling_price ~ log_max_power_bhp, data=train_set)
@@ -661,108 +714,80 @@ Come ci aspettavamo l'attributo `log_max_power_bhp` è molto significativo per l
 ggplot(train_set, aes(x = log_max_power_bhp, y = log_selling_price)) + geom_point() + stat_smooth(method = "lm", col = "red")
 ```
 
-Cerchiamo ora di raffinare il modello con un processo di forward selection. Per farlo ricorriamo alla funzione stepAIC dato il grande numero di attributi presenti. Sfruttiamo il `modello_minimo` appena realizzato, settiamo `direction = "forward"` e indichiamo come scope il `modello_completo`.
+Cerchiamo ora di raffinare il modello andando ad includere un numero maggiore di attributi. Per farlo eseguiamo un processo di forward selection; dato il grande numero di attributi presentisfruttiamo la funzione stepAIC.
 
-```{r stepAIC}
-stepAIC(modello_minimo, direction = "forward", scope = formula(modello_completo))
+In prima battuta utilizziamo il `modello_minimo` appena realizzato, settiamo `direction = "forward"` e indichiamo come scope il `modello_completo`.
+
+```{r modello stepAIC, include=FALSE, results='hide'}
+modello_stepAIC <- stepAIC(modello_minimo, direction = "forward", scope = formula(modello_completo))
 ```
 
 Visto il grande numero di passaggi necessari nascondiamo l'output e riportiamo i risultati di seguito:
 
-`log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + transmission + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + log_engine_CC + ownerFourth…Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeMaruti + makeVolvo + makeAudi + makeDatsun + makeLand + makeFord + fuelCNG + makeFiat + seller_typeDealer + makeMahindra + makeVolkswagen + makeDaewoo + fuelLPG + makeKia + makeSkoda + ownerTest.Drive.Car + makeOpel + makeJeep + makeForce + seller_typeTrustmark.Dealer`
+`formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + transmission + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + ownerFourth…Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeVolvo + makeAudi + makeFord + makeDatsun + makeLand + fuelCNG + makeFiat + makeMaruti + makeMahindra + seller_typeDealer + fuelLPG + makeVolkswagen + makeDaewoo + ownerTest.Drive.Car + makeKia + makeMitsubishi + makeHonda + makeJeep + makeOpel + seller_typeTrustmark.Dealer + makeHyundai`
 
-Il processo di stepAIC ha portato all'esclusione di 8 attributi tutti legati alla marche dei veicoli: makeNissan, makeMitsubishi, makeMG, makeRenault, makeHyundai, makeIsuzu, makeHonda, makeAshok. Verifico i parametri di questo nuovo modello.
+Il processo di stepAIC ha portato all'esclusione di 7 attributi tutti legati alla marche dei veicoli: `makeMG, makeForce, makeIsuzu, makeSkoda, makeNissan, makeRenault, makeAshok`. Verifico a questo punto i parametri di questo nuovo modello.
 
-```{r regressione lineare rispetto agli attributi individuati da stepAIC}
-modello_stepAIC <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + transmission + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + log_engine_CC + ownerFourth...Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeMaruti + makeVolvo + makeAudi + makeDatsun + makeLand + makeFord + fuelCNG + makeFiat + seller_typeDealer + makeMahindra + makeVolkswagen + makeDaewoo + fuelLPG + makeKia + makeSkoda + ownerTest.Drive.Car + makeOpel + makeJeep + makeForce + seller_typeTrustmark.Dealer, data = train_set)
-
+```{r risultato modello stepAIC}
 summary(modello_stepAIC)
 ```
 
-La rimozione di quelli attributi ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8929`, cioé praticamente identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance. Nel modello sono presenti peró ancora diversi attributi che sarebbe meglio rimuovere poiché collineari o insignificanti.
+La rimozione di quelli attributi ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8901`, cioè identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance.
 
-I coefficienti nella tabella sono presentati nell'ordine in cui sono stati aggiunti nel processo di stepAIC, possiamo notare infatti che quelli verso il basso presentano una significatività non molto elevata. Dato l'ancora alto numero di attributi decidiamo di essere piú stringenti e di rimuovere quegli attiributi che non presentano una significatività molto elevata. La rimozione andrebbe eseguita un attributo alla volta ma dato che vogliamo ridurre di molto la dimensionalitá inizieremo con togliere in blocco i 7 attributi con `significativitá > 0.05`. Gli attributi rimossi sono `makeKia, makeSkoda, ownerTest.Drive.Car, makeOpel, makeJeep, makeForce, seller_typeTrustmark.Dealer`.
+Andiamo allora a graficare le caratteristiche di questo nuovo modello.
 
-```{r modello 1}
-modello_1 <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + transmission + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + log_engine_CC + ownerFourth...Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeMaruti + makeVolvo + makeAudi + makeDatsun + makeLand + makeFord + fuelCNG + makeFiat + seller_typeDealer + makeMahindra + makeVolkswagen + makeDaewoo + fuelLPG, data = train_set)
-
-summary(modello_1)
+```{r plot modello stepAIC, warning=FALSE}
+par(pty="s")
+plot(modello_stepAIC)
 ```
 
-Questa rimozione non ha portato sostanziali modifiche all' `Adjusted R-squared:  0.8925`, non intaccando quindi le performance del modello.
+#commenti grafici
 
-Rimuoviamo anche `makeDaewoo e fuelLPG`.
+Nel modello sono presenti però ancora diversi attributi che sarebbe meglio rimuovere poiché poco significativi. Procediamo allora nuovamente ad utilizzare la funzione stepAIC settando il parametro k, che limita la significativitá dei parametri, ad un valore corrispondente a `0.001`. Per calcolare il valore di k fruttiamo la funzione `qchisq`.
 
-```{r modello 2}
-modello_2 <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + transmission + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + log_engine_CC + ownerFourth...Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeMaruti + makeVolvo + makeAudi + makeDatsun + makeLand + makeFord + fuelCNG + makeFiat + seller_typeDealer + makeMahindra + makeVolkswagen, data = train_set)
-
-summary(modello_2)
+```{r valore di k da significativitá minima}
+k_value <- qchisq(0.001, 1, lower.tail = F)
 ```
 
-L'R quandro é ancora alto `Adjusted R-squared:  0.8923`, passiamo quindi a rimuovere gli attributi con significativitá maggiore di 0.01: `transmission, seller_typeDealer, makeMahindra, makeVolkswagen`.
-
-```{r modello 3}
-modello_3 <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + log_engine_CC + ownerFourth...Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeMaruti + makeVolvo + makeAudi + makeDatsun + makeLand + makeFord + fuelCNG + makeFiat, data = train_set)
-
-summary(modello_3)
+```{r modello stepAIC con parametro k, include=FALSE, results='hide'}
+modello_stepAIC_k <- stepAIC(modello_minimo, direction = "forward", scope = formula(modello_completo), k = k_value)
 ```
 
-Dato che `Adjusted R-squared:  0.8917` è sostanzialmente immutato rimuoviamo ancora gli ultimi 5 attributi (`makeDatsun, makeLand, makeFord, fuelCNG, makeFiat`) che sono quelli che mostrano significatività un po' più bassa.
+Anche in questo caso nascondiamo l'output e riportiamo solo il risultato.
 
-```{r modello 4}
-modello_4 <- lm(formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + log_engine_CC + ownerFourth...Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeMaruti + makeVolvo + makeAudi, data = train_set)
+`formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + transmission + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + ownerFourth…Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeVolvo + makeAudi + makeFord + makeDatsun + makeLand + fuelCNG + makeFiat + makeMaruti + makeMahindra`
 
-summary(modello_4)
+Risultano quindi esclusi dal modello 19 attributi: `seller_typeDealer, fuelLPG, makeVolkswagen, makeDaewoo, ownerTest.Drive.Car, makeHonda, makeMitsubishi, makeKia, makeOpel, makeJeep, seller_typeTrustmark.Dealer, makeMG, makeRenault, makeForce, makeSkoda, makeNissan, makeIsuzu, makeHyundai, makeAshok`.
+
+Procediamo a verificare il valore dell'R quadro del nuovo modello.
+
+```{r risultato modello stepAIC con parametro k}
+summary(modello_stepAIC_k)
 ```
 
-Il valore dell'R quadro aggiustato è sceso leggermente a `Adjusted R-squared:  0.8882` ma resta comunque molto alto. Siamo rimasti quindi con 20 attributi che presentano tutti la massima significatività.
+Il modello è ora composto da 26 attributi molto significativi, il valore dell'R quadro aggiustato é `Adjusted R-squared:  0.8891`, cioè praticamente identico a quello individuato in precedenza.
 
-```{r}
-par(mfrow=c(2,2))
-plot(modello_4)
-par(mfrow=c(1,1))
+Anche in questo caso andiamo a mostrare i grafici dei residui del modello trovato.
+
+```{r plot modello stepAIC con parametro k, warning=FALSE}
+par(pty="s")
+plot(modello_stepAIC_k)
 ```
 
-Procediamo ora con il test F. Utilizzando ora la funzione Anova confrontiamo questo ultimo modello con quello ottenuto dal processo di stepAIC per vedere se la rimozione dei 18 attributi che abbiamo fatto è giustificata.
+#commento grafico
 
-```{r confronto modello_4 con modello_stepAIC}
-anova(modello_stepAIC, modello_4)
+Procediamo ora con il test F. Utilizzando ora la funzione Anova confrontiamo il modello ottenuto con la funzione stepAIC e quello ottenuto dal processo di stepAIC con parametro k per vedere se la rimozione degli attributi meno significativi con l'uso del parametro k è giustificata.
+
+```{r confronto modello_stepAIC con modello_stepAIC_k}
+anova(modello_stepAIC, modello_stepAIC_k)
 ```
 
 #verificare se é accettabile quel valore di F
-
-#plot modello finale
 
 ### Analisi dei residui
 
 ## Verifico il modello applicandolo al test set
 
-### rmse
+### rmse modello con tutti i parametri
 
-```{r cose da fare}
-
-#T TEST
-#Variable importance
-#F TEST
-#Adjusted R-squared
-#Residual analysis
-#(compare two models with anova)
-
-#Prediction RMSE
-```
-
-#applico un'analisi di regressione fra year e selling price
-
-```{r analisi di regressione fra le colonne year e selling price}
-car1<-car[,c(3,4)]
-test_lm<-lm(log(selling_price) ~.,data = car1)
-summary(test_lm)
-(summary(test_lm)$coefficient)
-```
-
-#applico un plot per analizzare la variabile target sui residui #(bisogna allargare l'asse x su alcuni plot per vedere meglio l'andamento) #Nel secondo diagramma per la regressione ideale i punti dovrebbero trovarsi sulla retta diagonale e per questo motivo il nostro risultato non è così male da rifiutare il modello. #negli altri grafici invece affinchè si ottenga una regressione lineare corretta le linee rosse si sarebbero dovute essere parallele all'asse x (dire se i risultati sono più o meno accettabili dopo aver allargato l'asse delle x per l'osservazione)
-
-```{r faccio un plot per analizzare i grafici che ottengo}
-plot(test_lm)
-
-```
+### rmse modello scelto
