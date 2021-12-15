@@ -10,7 +10,6 @@ output:
 # Importazione librerie
 
 ```{r importazione librerie e opzioni di rendering, warning=FALSE, include=FALSE}
-
 library(MASS)
 library(readr)
 library(tibble)
