@@ -812,18 +812,19 @@ RMSE(pred = lm_pred2, obs = test_set$log_selling_price)
 
 ```
 
-# in questo caso è strano che la radice dell'errore quadratico medio sia più bassa nel primo modello dello strepAIC rispetto al secondo, infatti nel primo modello è di 0.2929, mentre nel secondo modello dello stepAIC k è di 0.2938, anche se c'è un distacco davvero minimo. Inoltre sembra che ci sia un problema di overfitting del modello sia del primo che del secondo (anche se sempre con valori minimi) perchè si ha sia nel primo che nel secondo caso un valore dell'rmse più basso nel training test rispetto che nel test set. Occorre migliorare i modelli
+# in questo caso è strano che la radice dell'errore quadratico medio sia più bassa nel primo modello dello strepAIC rispetto al secondo, infatti nel primo modello è di 0.2929, mentre nel secondo modello dello stepAIC k è di 0.2938, anche se c'è un distacco davvero piccolissimo. Inoltre sembra che ci sia un problema di overfitting del modello sia del primo che del secondo (anche se sempre con valori minimi) perchè si ha sia nel primo che nel secondo caso un valore dell'rmse più basso nel training test rispetto che nel test set suggerendo che il nostro modello di training potrebbe essere migliore il set di dati di set.
+
+Occorre migliorare i modelli
 
 
-#controllo la correlazione dei dati importando la libreria car
+#controllo la correlazione dei dati
 ```{r controllo la correlazione}
-library(car)
-vif(modello_stepAIC)
-vif(modello_stepAIC_k)
+ggcorr(modello_stepAIC$model, label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
 
+ggcorr(modello_stepAIC_k$model, label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
 ```
 
-
+#non sembra ci siano problemi di autocorrelazione per cui ora valuto i due modelli sulla base dell'autocorrelazione ecc....
 
 
 
