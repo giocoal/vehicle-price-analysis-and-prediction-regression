@@ -781,14 +781,89 @@ Procediamo ora con il test F. Utilizzando ora la funzione Anova confrontiamo il 
 anova(modello_stepAIC, modello_stepAIC_k)
 ```
 
-#verificare se é accettabile quel valore di F
+###verificare se é accettabile quel valore di F
+#da verificare se tutto corretto: 
+La funzione anova prenderà gli oggetti del modello come argomenti e restituirà un ANOVA che verifica se il modello più complesso (modificato dallo stepAIC k) è significativamente migliore nell'acquisizione dei dati rispetto al modello più semplice (modello con lo stepAIC). Se il p-value risultante è sufficientemente basso (di solito inferiore a 0,05), concludiamo che il modello più complesso è significativamente migliore del modello più semplice, favorendo quindi il modello più complesso. Se il p-value non è sufficientemente basso (di solito maggiore di 0,05), dovremmo privilegiare il modello più semplice. Nel nostro caso nel secondo modello come indicato da df=-9 lo stepAIC ha rimosso 9 attributi per migliorare il modello, per cui il secondo modello presenta 9 attributi in meno rispetto al primo. Nel nostro caso inoltre il p-value è sicuramente più basso rispetto a 0,05 per cui il modello nuovo con 9 attributi in meno rispetto il primo è sicuramente migliore per cui tenderemomna privilegiare il secondo modello. In sostanza se il p-value è minore del livello di significatività scelto (solitamente pari a 0,05) allora si può concludere che il modello fornisce un adattamento migliore ai dati.
 
-### Analisi dei residui
+La statistica F è semplicemente un rapporto di due varianze. Le varianze sono una misura della dispersione, ovvero quanto i dati sono dispersi dalla media. Valori maggiori rappresentano una dispersione maggiore. Se le osservazioni per ciascun gruppo sono vicine alla media del gruppo, la varianza all'interno dei campioni è bassa. Tuttavia, se le osservazioni per ciascun gruppo sono più lontane dalla media del gruppo, la varianza all'interno dei campioni è maggiore. Nel nostro caso abbiamo una f-test di 7 per cui non è un valore eccessivamente elevato anche se in generale, una statistica F è un rapporto di due quantità che dovrebbero essere approssimativamente uguali nell'ipotesi nulla, che produce una statistica F di circa 1. 
 
-## Verifico il modello applicandolo al test set
+### Analisi dei residui (da fare)
 
-### rmse modello con tutti i parametri
 
-### rmse modello scelto
-######
-########################
+
+
+#valutazione dell'rmse nel caso del modello stepAIC con tutte le variabili e del modello stepAIC k con 9 variabili in meno 
+```{r valutazione dell'rmse nel caso dei due modelli applicati}
+lm_pred <- predict(modello_stepAIC, newdata = test_set %>% select(-log_selling_price))
+# RMSE of train dataset
+RMSE(pred = modello_stepAIC$fitted.values, obs = train_set$log_selling_price)
+# RMSE of test dataset
+RMSE(pred = lm_pred, obs = test_set$log_selling_price)
+
+######## qui valutazione dell'rmse del modello stepAIC k con meno variabili
+
+lm_pred2 <- predict(modello_stepAIC_k, newdata = test_set %>% select(-log_selling_price))
+
+# RMSE of train dataset
+RMSE(pred = modello_stepAIC_k$fitted.values, obs = train_set$log_selling_price)
+# RMSE of test dataset
+RMSE(pred = lm_pred2, obs = test_set$log_selling_price)
+
+
+```
+
+# in questo caso è strano che la radice dell'errore quadratico medio sia più bassa nel primo modello dello strepAIC rispetto al secondo, infatti nel primo modello è di 0.2929, mentre nel secondo modello dello stepAIC k è di 0.2938, anche se c'è un distacco davvero minimo. Inoltre sembra che ci sia un problema di overfitting del modello sia del primo che del secondo (anche se sempre con valori minimi) perchè si ha sia nel primo che nel secondo caso un valore dell'rmse più basso nel training test rispetto che nel test set. Occorre migliorare i modelli
+
+
+#controllo la correlazione dei dati importando la libreria car
+```{r controllo la correlazione}
+library(car)
+vif(modello_stepAIC)
+vif(modello_stepAIC_k)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
