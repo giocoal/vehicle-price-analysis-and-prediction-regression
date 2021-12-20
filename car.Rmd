@@ -787,8 +787,6 @@ La funzione anova prenderà gli oggetti del modello come argomenti e restituirà
 
 La statistica F è semplicemente un rapporto di due varianze. Le varianze sono una misura della dispersione, ovvero quanto i dati sono dispersi dalla media. Valori maggiori rappresentano una dispersione maggiore. Se le osservazioni per ciascun gruppo sono vicine alla media del gruppo, la varianza all'interno dei campioni è bassa. Tuttavia, se le osservazioni per ciascun gruppo sono più lontane dalla media del gruppo, la varianza all'interno dei campioni è maggiore. Nel nostro caso abbiamo una f-test di 7 per cui non è un valore eccessivamente elevato anche se in generale, una statistica F è un rapporto di due quantità che dovrebbero essere approssimativamente uguali nell'ipotesi nulla, che produce una statistica F di circa 1. 
 
-### Analisi dei residui (da fare)
-
 
 
 
@@ -810,23 +808,81 @@ RMSE(pred = modello_stepAIC_k$fitted.values, obs = train_set$log_selling_price)
 RMSE(pred = lm_pred2, obs = test_set$log_selling_price)
 
 
+
+
+
+R2(lm_pred, test_set$log_selling_price)
+R2(lm_pred2, test_set$log_selling_price)
 ```
 
 # in questo caso è strano che la radice dell'errore quadratico medio sia più bassa nel primo modello dello strepAIC rispetto al secondo, infatti nel primo modello è di 0.2929, mentre nel secondo modello dello stepAIC k è di 0.2938, anche se c'è un distacco davvero piccolissimo. Inoltre sembra che ci sia un problema di overfitting del modello sia del primo che del secondo (anche se sempre con valori minimi) perchè si ha sia nel primo che nel secondo caso un valore dell'rmse più basso nel training test rispetto che nel test set suggerendo che il nostro modello di training potrebbe essere migliore il set di dati di set.
 
-Occorre migliorare i modelli
 
 
-#controllo la correlazione dei dati
-```{r controllo la correlazione}
-ggcorr(modello_stepAIC$model, label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
+#controllo la linearità del modello dello stepAIC k perchè la regressione lineare è un modello parametrico, il che significa che per creare un'equazione, il modello segue alcune ipotesi classiche. La regressione lineare che non segue questa assunzione può essere fuorviante o semplicemente ha uno stimatore distorto. Per questa sezione, controlliamo solo il secondo modello. Il modello di regressione lineare presuppone che esista una relazione lineare tra i predittori e la risposta. Se la vera relazione è tutt'altro che lineare, allora praticamente tutte le conclusioni che traiamo dall'adattamento sono sospette. Inoltre, l'accuratezza della previsione del modello può essere notevolmente ridotta. I grafici residui sono un utile strumento grafico per identificare la non linearità. Se c'è un pattern nel grafico residuo, significa che il modello può essere ulteriormente migliorato o che non soddisfa l'ipotesi di linearità. Il grafico mostra la relazione tra i residui/errori con i valori previsti.
 
-ggcorr(modello_stepAIC_k$model, label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
+######## la linearità è accettata
+
+```{r controllo linearità}
+linearità<- data.frame(residual = modello_stepAIC_k$residuals, fitted = modello_stepAIC_k$fitted.values)
+
+linearità %>% ggplot(aes(fitted, residual)) + geom_point() + geom_smooth() + geom_hline(aes(yintercept = 0)) + 
+    theme(panel.grid = element_blank(), panel.background = element_blank())
+
+
 ```
 
-#non sembra ci siano problemi di autocorrelazione per cui ora valuto i due modelli sulla base dell'autocorrelazione ecc....
+#applico il test sulla normalità del modello applicando il test di shapiro_wilk. Si nota che i residui non seguono una distribuzione normale perchè il p-value è molto più piccolo di 0.05 e prendendo come ipotesi nulla la normalità dei residui bisogna respingerla e accettare l'ipotesi alternativa.
+
+#####sistemare la normalità fino ad ottenere il p-value>0.05
+```{r sharipo_wilk}
+shapiro.test(modello_stepAIC_k$residuals)
+hist(modello_stepAIC_k$residuals)
+```
+
+#applico il test dell'autocorrelazione. Gli errori standard calcolati per i coefficienti di regressione stimati o i valori adattati si basano sull'assunzione di termini di errore non correlati, ossia nessuna autocorrelazione. Se infatti c'è correlazione tra i termini di errore, allora gli errori standard stimati tenderanno a sottostimare i veri errori standard. Di conseguenza, gli intervalli di confidenza e previsione saranno più ristretti di quanto dovrebbero essere.
+Al momento si assume che l'ipotesi nulla sia che non c'è autocorrelazione.
+Qui si può notare che nel modello utilizzato per l'applicazione del modello D-W si ha un valore di 2 per cui non è presente autocorrelazione. Nei casi in cui si trovano valori molto inferiori a 2 allora siamo in presenza di autocorrelazione.
+
+############l'autocorrelazione è accettata (non è presente)
+```{r autocorrelazione}
+library(car)
+durbinWatsonTest(modello_stepAIC_k)
 
 
+```
+
+
+#applico il test dell'eteroschedasticità per valutare che le varianze dei termini di errore non sono costanti. Si possono identificare varianze non costanti negli errori dalla presenza di una forma ad imbuto nel grafico residuo, lo stesso con quello di linearità. In questo caso affinchè il test dell'eteroschedasticità sia negativo il p-value deve essere minore di 0.05 per cui in questo caso il nostro modello presenta il problema dell'eteroschedasticità e assumendo come ipotesi nulla quella della non presenza dell'eteroschedasticità rifiutaremo l'ipotesi nulla.
+
+###########sistemare l'eteroschedasticità fino ad ottenere il p-value>0.05
+
+```{r eteroschedasticità}
+library(lmtest)
+bptest(modello_stepAIC_k$model)
+linearità%>% ggplot(aes(fitted, residual)) + geom_point() + theme_light() + geom_hline(aes(yintercept = 0))
+
+```
+
+#test della multicollinearità. Per multicollinearità si intende una correlazione tra le variabili/predittori indipendenti. Affinchè non sia presente multicollinearità tra le variabili i valori devono essere al di sotto del valore 5. Nel modello preso in considerazione per cui non vi sono problemi di multicollinearità.
+
+########### la multicollinearità non è presente quindi accetto i valori ottenuti
+```{r multicollinearità}
+vif(modello_stepAIC_k)
+
+```
+
+#miglioriamo il modello
+
+
+#controllo la correlazione dei dati per eliminare le variabili troppo correlate fra di loro ma come già visto dal test della multicollinearità non ci sono problemi per quanto riguarda le correlazioni fra le variabili
+```{r controllo la correlazione}
+ggcorr(modello_stepAIC$model, label = TRUE, label_size = 2.5, hjust = 1, layout.exp = 15)
+
+ggcorr(modello_stepAIC_k$model, label = TRUE, label_size = 2, hjust = 1, layout.exp = 15)
+
+cor(modello_stepAIC_k$model)
+```
 
 
 
