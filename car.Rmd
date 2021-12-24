@@ -187,6 +187,16 @@ car <- car[car$max_power_bhp < 300, ]
 car <- car[car$km_driven < 300000 & car$km_driven > 1, ]
 ```
 
+### Righe duplicate nel dataset
+
+Come ultima verifica del dataset individuo se sono presenti righe uguali.
+
+```{r numero righe uguali}
+sum(duplicated(car))
+```
+
+Questo significa che sono presenti più volte gli stessi modelli di auto con esattamente lo stesso prezzo, anni di vita e numero di km. Questa cosa però può essere giustificata dal fatto che i prezzi ed i km vengono molto spesso arrotondati in modo aggressivo, decidiamo dunque di lasciare tutte le righe.
+
 ## Analisi Distribuzionale variabili quantitative
 
 ### Fase esplorativa
@@ -263,6 +273,14 @@ summary(car_num)
 #### Visualizzazioni e analisi della forma della distribuzioni
 
 In modo analogo a quanto fatto con la variabile target, osserviamo la distribuzione delle variabili esplicative quantitative `year`, `km_driven`, `seats`, `engine_CC` e `max_power_bhp`.
+
+grid.arrange(plot1, plot2, plot4, plot5, ncol = 2,
+
+top = "Istogrammi delle distribuzioni delle variabili esplicative quantitative",
+
+left = "Densità"
+
+)
 
 ```{r istogrammi, include = False}
 #istogrammi 
@@ -588,59 +606,70 @@ Per quanto riguarda le associazioni tra le variabili esplicative, si evidenziano
 
 ## Preparazione
 
+### Analisi righe duplicate
+
+Quantifico il numero di righe duplicate presenti
+
+```{r}
+sum(duplicated(car))
+```
+
+Sono presenti 1183 righe che descrivono auto uguali, dello stesso anno, con gli stessi km e prezzo. Inoltre non puó trattarsi della stessa auto riventuta piú volte altrimenti cambierebbe il campo `owner`. Questa cosa è strana e per la maggior parte delle righe è probabilmente dovuta ad un cattivo inserimento dei dati, per questo decidiamo di rimuoverle.
+
+```{r}
+car_noduplicati <- distinct(car)
+
+car %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins = 30, )+geom_density(aes(selling_price))+ggtitle('Istogramma del logaritmo di selling_price con righe duplicate')+xlab('Selling Price')+ylab('Densità')+scale_x_log10()
+
+car_noduplicati %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins = 30, )+geom_density(aes(selling_price))+ggtitle('Istogramma del logaritmo di selling_price senza righe ripeture')+xlab('Selling Price')+ylab('Densità')+scale_x_log10()
+
+par(pty="s")
+qqnorm(car$log_selling_price, main = "Normal Q-Q Plot con righe duplicate")
+qqline(car$log_selling_price)
+
+par(pty="s")
+qqnorm(car_noduplicati$log_selling_price, main = "Normal Q-Q Plot senza righe duplicate")
+qqline(car_noduplicati$log_selling_price)
+```
+
+Rimuovendo le righe duplicate si vede anche un miglioramento nella distribuzione della variabile `log_selling_price`.
+
+### Dataset con variabili dummy
+
 Creo un nuovo dataset chiamato `car_dummy` al quale aggiungo le variabili quantitative in forma logaritmica dove necessario. Successivamente elimino gli attributi che sono molto correlati con gli altri presenti e poco correlati con la variabile target (`log_engine_CC` e `seats`).
 
 ```{r subset delle variabili quantitative}
 
-car_dummy <- car[,car_nums_colnames_log]
+car_dummy <- car_noduplicati[,car_nums_colnames_log]
 car_dummy <- select(car_dummy, -c('seats', 'log_engine_CC', 'km_driven'))
 ```
-
-### Variabili dummy
 
 Al dataset appena creato aggiungo le colonne relative alle variabili categoriche. Per ogni attributo vengono generate n-1 nuove colonne dove n è il numero di modalità di quel particolare attributo.
 
 ```{r da variabili fattoriali a variabili dummy}
 
 # Aggiungo la variabile fattoriale 'transmission' a car dummy e la converto in numerica (0 corrispode a 'automatic'):
-car_dummy <- cbind(car_dummy,transmission = car$transmission)
+car_dummy <- cbind(car_dummy,transmission = car_noduplicati$transmission)
 levels(car_dummy$transmission)<-c(1,0)
 car_dummy$transmission <- as.numeric(levels(car_dummy$transmission))[car_dummy$transmission]
 
 #converto la variabile fattoriale 'make' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~make, data = car))[,-1]
+dummy_temp <- data.frame(model.matrix( ~make, data = car_noduplicati))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 #converto la variabile fattoriale 'fuel' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~fuel, data = car))[,-1]
+dummy_temp <- data.frame(model.matrix( ~fuel, data = car_noduplicati))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 #converto la variabile fattoriale 'seller_type' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~seller_type, data = car))[,-1]
+dummy_temp <- data.frame(model.matrix( ~seller_type, data = car_noduplicati))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 #converto la variabile fattoriale 'owner' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~owner, data = car))[,-1]
+dummy_temp <- data.frame(model.matrix( ~owner, data = car_noduplicati))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 head(car_dummy)
-```
-
-### Righe duplicate nel dataset
-
-Individuo il numero di righe uguali nel dataset.
-
-##da fare prima?
-
-```{r}
-sum(duplicated(car_dummy))
-sum(duplicated(car))
-```
-
-Il fatto che delle righe siano identiche è strano poiché è improbabile delle auto identiche siano dello stesso anno e abbiano esattamente lo stesso prezzo e numero di km. Inoltre non può essere nemmeno lo stesso veicolo rivenduto più volte perché l'attributo `owner` sarebbe diverso. Vedendo l'alto numero di queste righe sospette decidiamo dunque di toglierle dal datset.
-
-```{r}
-car_dummy <- car_dummy[!duplicated(car_dummy),]
 ```
 
 ### Training e Test sets
@@ -666,14 +695,14 @@ print(paste("Numero righe test_set: ", nrow(test_set), sep = " "))
 
 Per poter eseguire la regressione lineare abbiamo diverse assunzioni da fare .....
 
-Come primo passo realizzo un modello di regressione, sul `train_set` in cui considero tutte le 45 variabili
+Come primo passo realizzo un modello di regressione, sul `train_set` in cui considero tutte le 43 variabili
 
 ```{r modello completo}
 modello_completo <- lm(log_selling_price ~ ., data=train_set)
 summary(modello_completo)
 ```
 
-Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `R-squared: 0.8901`. Il problema di questo modello però è che molti degli attributi non sono significativi e alcuni di questi sono collineari, quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set.
+Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `Adjusted R-squared: 0.8523`. Il problema di questo modello però è che molti degli attributi non sono significativi, quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set.
 
 Dalla tabella dei coefficienti si può osservare anche che, dei molti attributi dovuti alla marca dell'auto, quelli che presentano la significatività maggiore sono quelli corrispondenti alle macchine più lussuose. Questa cosa è dovuta al fatto che il prezzo di queste auto si discosta molto dalla maggior parte delle altre auto a parità di motore e utilizzo, in fase di valutazione del prezzo è quindi un parametro da tenere in considerazione.
 
@@ -707,31 +736,25 @@ modello_minimo <- lm(log_selling_price ~ log_max_power_bhp, data=train_set)
 summary(modello_minimo)
 ```
 
-Come ci aspettavamo l'attributo `log_max_power_bhp` è molto significativo per la descrizione del modello con un p-value molto basso e un R quadro comunque abbastanza elevato `Adjusted R-squared:  0.5493.` Vediamo ora qui di seguito la rappresentazione grafica della retta trovata.
+Come ci aspettavamo l'attributo `log_max_power_bhp` è molto significativo per la descrizione del modello con un p-value molto basso e un R quadro comunque abbastanza elevato `Adjusted R-squared:  0.4672.` Vediamo ora qui di seguito la rappresentazione grafica della retta trovata.
 
 ```{r grafico modello semplificato}
 ggplot(train_set, aes(x = log_max_power_bhp, y = log_selling_price)) + geom_point() + stat_smooth(method = "lm", col = "red")
 ```
 
-Cerchiamo ora di raffinare il modello andando ad includere un numero maggiore di attributi. Per farlo eseguiamo un processo di forward selection; dato il grande numero di attributi presentisfruttiamo la funzione stepAIC.
+Cerchiamo ora di raffinare il modello andando ad includere un numero maggiore di attributi. Per farlo eseguiamo un processo di forward selection; dato il grande numero di attributi presenti sfruttiamo la funzione stepAIC.
 
-In prima battuta utilizziamo il `modello_minimo` appena realizzato, settiamo `direction = "forward"` e indichiamo come scope il `modello_completo`.
+In prima battuta utilizziamo il `modello_minimo` appena realizzato, settiamo `direction = "both"` e indichiamo come scope il `modello_completo`.
 
 ```{r modello stepAIC, include=FALSE, results='hide'}
-modello_stepAIC <- stepAIC(modello_minimo, direction = "forward", scope = formula(modello_completo))
+modello_stepAIC <- stepAIC(modello_minimo, direction = "both", scope = formula(modello_completo))
 ```
 
-Visto il grande numero di passaggi necessari nascondiamo l'output e riportiamo i risultati di seguito:
-
-`formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + transmission + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + ownerFourth…Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeVolvo + makeAudi + makeFord + makeDatsun + makeLand + fuelCNG + makeFiat + makeMaruti + makeMahindra + seller_typeDealer + fuelLPG + makeVolkswagen + makeDaewoo + ownerTest.Drive.Car + makeKia + makeMitsubishi + makeHonda + makeJeep + makeOpel + seller_typeTrustmark.Dealer + makeHyundai`
-
-Il processo di stepAIC ha portato all'esclusione di 7 attributi tutti legati alla marche dei veicoli: `makeMG, makeForce, makeIsuzu, makeSkoda, makeNissan, makeRenault, makeAshok`. Verifico a questo punto i parametri di questo nuovo modello.
-
-```{r risultato modello stepAIC}
+```{r risultati modello stepAIC}
 summary(modello_stepAIC)
 ```
 
-La rimozione di quelli attributi ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8901`, cioè identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance.
+Il processo di stepAIC ha portato all'esclusione di 12 attributi. Questo ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8525`, cioè identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance.
 
 Andiamo allora a graficare le caratteristiche di questo nuovo modello.
 
@@ -744,27 +767,16 @@ plot(modello_stepAIC)
 
 Nel modello sono presenti però ancora diversi attributi che sarebbe meglio rimuovere poiché poco significativi. Procediamo allora nuovamente ad utilizzare la funzione stepAIC settando il parametro k, che limita la significativitá dei parametri, ad un valore corrispondente a `0.001`. Per calcolare il valore di k fruttiamo la funzione `qchisq`.
 
-```{r valore di k da significativitá minima}
-k_value <- qchisq(0.001, 1, lower.tail = F)
-```
-
 ```{r modello stepAIC con parametro k, include=FALSE, results='hide'}
-modello_stepAIC_k <- stepAIC(modello_minimo, direction = "forward", scope = formula(modello_completo), k = k_value)
+k_value <- qchisq(0.001, 1, lower.tail = F)
+modello_stepAIC_k <- stepAIC(modello_minimo, direction = "both", scope = formula(modello_completo), k = k_value)
 ```
-
-Anche in questo caso nascondiamo l'output e riportiamo solo il risultato.
-
-`formula = log_selling_price ~ log_max_power_bhp + log_age + fuelPetrol + makeTata + transmission + makeToyota + makeChevrolet + km_driven + makeBMW + makeLexus + makeJaguar + makeMercedes.Benz + ownerFourth…Above.Owner + ownerThird.Owner + ownerSecond.Owner + makeVolvo + makeAudi + makeFord + makeDatsun + makeLand + fuelCNG + makeFiat + makeMaruti + makeMahindra`
-
-Risultano quindi esclusi dal modello 19 attributi: `seller_typeDealer, fuelLPG, makeVolkswagen, makeDaewoo, ownerTest.Drive.Car, makeHonda, makeMitsubishi, makeKia, makeOpel, makeJeep, seller_typeTrustmark.Dealer, makeMG, makeRenault, makeForce, makeSkoda, makeNissan, makeIsuzu, makeHyundai, makeAshok`.
-
-Procediamo a verificare il valore dell'R quadro del nuovo modello.
 
 ```{r risultato modello stepAIC con parametro k}
 summary(modello_stepAIC_k)
 ```
 
-Il modello è ora composto da 26 attributi molto significativi, il valore dell'R quadro aggiustato é `Adjusted R-squared:  0.8891`, cioè praticamente identico a quello individuato in precedenza.
+Risultano quindi esclusi dal modello 21 degli attributi iniziali, il modello è ora composto da 22 attributi molto significativi. Il valore dell'R quadro aggiustato é `Adjusted R-squared:  0.851`, cioè praticamente identico a quello individuato in precedenza.
 
 Anche in questo caso andiamo a mostrare i grafici dei residui del modello trovato.
 
@@ -777,20 +789,20 @@ plot(modello_stepAIC_k)
 
 Procediamo ora con il test F. Utilizzando ora la funzione Anova confrontiamo il modello ottenuto con la funzione stepAIC e quello ottenuto dal processo di stepAIC con parametro k per vedere se la rimozione degli attributi meno significativi con l'uso del parametro k è giustificata.
 
+```{r confronto modello_completo con modello_stepAIC_k}
+anova(modello_completo, modello_stepAIC_k)
+```
+
 ```{r confronto modello_stepAIC con modello_stepAIC_k}
 anova(modello_stepAIC, modello_stepAIC_k)
 ```
 
-###verificare se é accettabile quel valore di F
-#da verificare se tutto corretto: 
-La funzione anova prenderà gli oggetti del modello come argomenti e restituirà un ANOVA che verifica se il modello più complesso (modificato dallo stepAIC k) è significativamente migliore nell'acquisizione dei dati rispetto al modello più semplice (modello con lo stepAIC). Se il p-value risultante è sufficientemente basso (di solito inferiore a 0,05), concludiamo che il modello più complesso è significativamente migliore del modello più semplice, favorendo quindi il modello più complesso. Se il p-value non è sufficientemente basso (di solito maggiore di 0,05), dovremmo privilegiare il modello più semplice. Nel nostro caso nel secondo modello come indicato da df=-9 lo stepAIC ha rimosso 9 attributi per migliorare il modello, per cui il secondo modello presenta 9 attributi in meno rispetto al primo. Nel nostro caso inoltre il p-value è sicuramente più basso rispetto a 0,05 per cui il modello nuovo con 9 attributi in meno rispetto il primo è sicuramente migliore per cui tenderemomna privilegiare il secondo modello. In sostanza se il p-value è minore del livello di significatività scelto (solitamente pari a 0,05) allora si può concludere che il modello fornisce un adattamento migliore ai dati.
+###verificare se é accettabile quel valore di F #da verificare se tutto corretto: La funzione anova prenderà gli oggetti del modello come argomenti e restituirà un ANOVA che verifica se il modello più complesso (modificato dallo stepAIC k) è significativamente migliore nell'acquisizione dei dati rispetto al modello più semplice (modello con lo stepAIC). Se il p-value risultante è sufficientemente basso (di solito inferiore a 0,05), concludiamo che il modello più complesso è significativamente migliore del modello più semplice, favorendo quindi il modello più complesso. Se il p-value non è sufficientemente basso (di solito maggiore di 0,05), dovremmo privilegiare il modello più semplice. Nel nostro caso nel secondo modello come indicato da df=-9 lo stepAIC ha rimosso 9 attributi per migliorare il modello, per cui il secondo modello presenta 9 attributi in meno rispetto al primo. Nel nostro caso inoltre il p-value è sicuramente più basso rispetto a 0,05 per cui il modello nuovo con 9 attributi in meno rispetto il primo è sicuramente migliore per cui tenderemomna privilegiare il secondo modello. In sostanza se il p-value è minore del livello di significatività scelto (solitamente pari a 0,05) allora si può concludere che il modello fornisce un adattamento migliore ai dati.
 
-La statistica F è semplicemente un rapporto di due varianze. Le varianze sono una misura della dispersione, ovvero quanto i dati sono dispersi dalla media. Valori maggiori rappresentano una dispersione maggiore. Se le osservazioni per ciascun gruppo sono vicine alla media del gruppo, la varianza all'interno dei campioni è bassa. Tuttavia, se le osservazioni per ciascun gruppo sono più lontane dalla media del gruppo, la varianza all'interno dei campioni è maggiore. Nel nostro caso abbiamo una f-test di 7 per cui non è un valore eccessivamente elevato anche se in generale, una statistica F è un rapporto di due quantità che dovrebbero essere approssimativamente uguali nell'ipotesi nulla, che produce una statistica F di circa 1. 
+La statistica F è semplicemente un rapporto di due varianze. Le varianze sono una misura della dispersione, ovvero quanto i dati sono dispersi dalla media. Valori maggiori rappresentano una dispersione maggiore. Se le osservazioni per ciascun gruppo sono vicine alla media del gruppo, la varianza all'interno dei campioni è bassa. Tuttavia, se le osservazioni per ciascun gruppo sono più lontane dalla media del gruppo, la varianza all'interno dei campioni è maggiore. Nel nostro caso abbiamo una f-test di 7 per cui non è un valore eccessivamente elevato anche se in generale, una statistica F è un rapporto di due quantità che dovrebbero essere approssimativamente uguali nell'ipotesi nulla, che produce una statistica F di circa 1.
 
+#valutazione dell'rmse nel caso del modello stepAIC con tutte le variabili e del modello stepAIC k con 9 variabili in meno
 
-
-
-#valutazione dell'rmse nel caso del modello stepAIC con tutte le variabili e del modello stepAIC k con 9 variabili in meno 
 ```{r valutazione dell'rmse nel caso dei due modelli applicati}
 lm_pred <- predict(modello_stepAIC, newdata = test_set %>% select(-log_selling_price))
 # RMSE of train dataset
@@ -817,8 +829,6 @@ R2(lm_pred2, test_set$log_selling_price)
 
 # in questo caso è strano che la radice dell'errore quadratico medio sia più bassa nel primo modello dello strepAIC rispetto al secondo, infatti nel primo modello è di 0.2929, mentre nel secondo modello dello stepAIC k è di 0.2938, anche se c'è un distacco davvero piccolissimo. Inoltre sembra che ci sia un problema di overfitting del modello sia del primo che del secondo (anche se sempre con valori minimi) perchè si ha sia nel primo che nel secondo caso un valore dell'rmse più basso nel training test rispetto che nel test set suggerendo che il nostro modello di training potrebbe essere migliore il set di dati di set.
 
-
-
 #controllo la linearità del modello dello stepAIC k perchè la regressione lineare è un modello parametrico, il che significa che per creare un'equazione, il modello segue alcune ipotesi classiche. La regressione lineare che non segue questa assunzione può essere fuorviante o semplicemente ha uno stimatore distorto. Per questa sezione, controlliamo solo il secondo modello. Il modello di regressione lineare presuppone che esista una relazione lineare tra i predittori e la risposta. Se la vera relazione è tutt'altro che lineare, allora praticamente tutte le conclusioni che traiamo dall'adattamento sono sospette. Inoltre, l'accuratezza della previsione del modello può essere notevolmente ridotta. I grafici residui sono un utile strumento grafico per identificare la non linearità. Se c'è un pattern nel grafico residuo, significa che il modello può essere ulteriormente migliorato o che non soddisfa l'ipotesi di linearità. Il grafico mostra la relazione tra i residui/errori con i valori previsti.
 
 ######## la linearità è accettata
@@ -835,23 +845,22 @@ linearità %>% ggplot(aes(fitted, residual)) + geom_point() + geom_smooth() + ge
 #applico il test sulla normalità del modello applicando il test di shapiro_wilk. Si nota che i residui non seguono una distribuzione normale perchè il p-value è molto più piccolo di 0.05 e prendendo come ipotesi nulla la normalità dei residui bisogna respingerla e accettare l'ipotesi alternativa.
 
 #####sistemare la normalità fino ad ottenere il p-value>0.05
+
 ```{r sharipo_wilk}
 shapiro.test(modello_stepAIC_k$residuals)
 hist(modello_stepAIC_k$residuals)
 ```
 
-#applico il test dell'autocorrelazione. Gli errori standard calcolati per i coefficienti di regressione stimati o i valori adattati si basano sull'assunzione di termini di errore non correlati, ossia nessuna autocorrelazione. Se infatti c'è correlazione tra i termini di errore, allora gli errori standard stimati tenderanno a sottostimare i veri errori standard. Di conseguenza, gli intervalli di confidenza e previsione saranno più ristretti di quanto dovrebbero essere.
-Al momento si assume che l'ipotesi nulla sia che non c'è autocorrelazione.
-Qui si può notare che nel modello utilizzato per l'applicazione del modello D-W si ha un valore di 2 per cui non è presente autocorrelazione. Nei casi in cui si trovano valori molto inferiori a 2 allora siamo in presenza di autocorrelazione.
+#applico il test dell'autocorrelazione. Gli errori standard calcolati per i coefficienti di regressione stimati o i valori adattati si basano sull'assunzione di termini di errore non correlati, ossia nessuna autocorrelazione. Se infatti c'è correlazione tra i termini di errore, allora gli errori standard stimati tenderanno a sottostimare i veri errori standard. Di conseguenza, gli intervalli di confidenza e previsione saranno più ristretti di quanto dovrebbero essere. Al momento si assume che l'ipotesi nulla sia che non c'è autocorrelazione. Qui si può notare che nel modello utilizzato per l'applicazione del modello D-W si ha un valore di 2 per cui non è presente autocorrelazione. Nei casi in cui si trovano valori molto inferiori a 2 allora siamo in presenza di autocorrelazione.
 
 ############l'autocorrelazione è accettata (non è presente)
+
 ```{r autocorrelazione}
 library(car)
 durbinWatsonTest(modello_stepAIC_k)
 
 
 ```
-
 
 #applico il test dell'eteroschedasticità per valutare che le varianze dei termini di errore non sono costanti. Si possono identificare varianze non costanti negli errori dalla presenza di una forma ad imbuto nel grafico residuo, lo stesso con quello di linearità. In questo caso affinchè il test dell'eteroschedasticità sia negativo il p-value deve essere minore di 0.05 per cui in questo caso il nostro modello presenta il problema dell'eteroschedasticità e assumendo come ipotesi nulla quella della non presenza dell'eteroschedasticità rifiutaremo l'ipotesi nulla.
 
@@ -867,6 +876,7 @@ linearità%>% ggplot(aes(fitted, residual)) + geom_point() + theme_light() + geo
 #test della multicollinearità. Per multicollinearità si intende una correlazione tra le variabili/predittori indipendenti. Affinchè non sia presente multicollinearità tra le variabili i valori devono essere al di sotto del valore 5. Nel modello preso in considerazione per cui non vi sono problemi di multicollinearità.
 
 ########### la multicollinearità non è presente quindi accetto i valori ottenuti
+
 ```{r multicollinearità}
 vif(modello_stepAIC_k)
 
@@ -874,8 +884,8 @@ vif(modello_stepAIC_k)
 
 #miglioriamo il modello
 
-
 #controllo la correlazione dei dati per eliminare le variabili troppo correlate fra di loro ma come già visto dal test della multicollinearità non ci sono problemi per quanto riguarda le correlazioni fra le variabili
+
 ```{r controllo la correlazione}
 ggcorr(modello_stepAIC$model, label = TRUE, label_size = 2.5, hjust = 1, layout.exp = 15)
 
@@ -883,44 +893,3 @@ ggcorr(modello_stepAIC_k$model, label = TRUE, label_size = 2, hjust = 1, layout.
 
 cor(modello_stepAIC_k$model)
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
