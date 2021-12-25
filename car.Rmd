@@ -614,14 +614,14 @@ Quantifico il numero di righe duplicate presenti
 sum(duplicated(car))
 ```
 
-Sono presenti 1183 righe che descrivono auto uguali, dello stesso anno, con gli stessi km e prezzo. Inoltre non puó trattarsi della stessa auto riventuta piú volte altrimenti cambierebbe il campo `owner`. Questa cosa è strana e per la maggior parte delle righe è probabilmente dovuta ad un cattivo inserimento dei dati, per questo decidiamo di rimuoverle.
+Sono presenti 1183 righe che descrivono auto uguali, dello stesso anno, con gli stessi km e prezzo. Inoltre queste righe non possono riferirsi alla stessa auto rivenduta più volte altrimenti cambierebbe il campo `owner`. Questa cosa è strana e probabilmente per la maggior parte delle righe è dovuto ad un cattivo inserimento dei dati, per questo decidiamo di rimuoverle.
 
 ```{r}
 car_noduplicati <- distinct(car)
 
-car %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins = 30, )+geom_density(aes(selling_price))+ggtitle('Istogramma del logaritmo di selling_price con righe duplicate')+xlab('Selling Price')+ylab('Densità')+scale_x_log10()
+car %>% ggplot()+geom_histogram(aes(log_selling_price, ..density..), bins = 30, )+geom_density(aes(log_selling_price))+ggtitle('Istogramma del logaritmo di selling_price con righe duplicate')+xlab('Selling Price')+ylab('Densità')
 
-car_noduplicati %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins = 30, )+geom_density(aes(selling_price))+ggtitle('Istogramma del logaritmo di selling_price senza righe ripeture')+xlab('Selling Price')+ylab('Densità')+scale_x_log10()
+car_noduplicati %>% ggplot()+geom_histogram(aes(log_selling_price, ..density..), bins = 30, )+geom_density(aes(log_selling_price))+ggtitle('Istogramma del logaritmo di selling_price senza righe ripeture')+xlab('Selling Price')+ylab('Densità')
 
 par(pty="s")
 qqnorm(car$log_selling_price, main = "Normal Q-Q Plot con righe duplicate")
@@ -632,7 +632,25 @@ qqnorm(car_noduplicati$log_selling_price, main = "Normal Q-Q Plot senza righe du
 qqline(car_noduplicati$log_selling_price)
 ```
 
-Rimuovendo le righe duplicate si vede anche un miglioramento nella distribuzione della variabile `log_selling_price`.
+Rimuovendo le righe duplicate si vede anche un miglioramento nella distribuzione della variabile `log_selling_price`. Anche il Normal Q-Q Plot é migliorato anche se le code risultano comunque un pó piú spesse della distribuzione normale.
+
+### Categorie poco rappresentate
+
+Individuo le marche con un numero di conteggi minore di 13, su cui non potrei fare una corretta statistica inferenziale.
+
+```{r conteggi per categorie make}
+conteggi <- count(car_noduplicati, make, sort = TRUE)
+nomake<-conteggi[conteggi$n < 13,]
+nomake
+```
+
+Rimuovo le 54 righe riferite a 13 marche poco rappresentate.
+
+```{r rimozione auto con marche poco rappresentate}
+car_noduplicati_nomake <- droplevels(car_noduplicati[!(car_noduplicati$make %in% nomake$make),])
+
+str(car_noduplicati_nomake$make)
+```
 
 ### Dataset con variabili dummy
 
@@ -640,7 +658,7 @@ Creo un nuovo dataset chiamato `car_dummy` al quale aggiungo le variabili quanti
 
 ```{r subset delle variabili quantitative}
 
-car_dummy <- car_noduplicati[,car_nums_colnames_log]
+car_dummy <- car_noduplicati_nomake[,car_nums_colnames_log]
 car_dummy <- select(car_dummy, -c('seats', 'log_engine_CC', 'km_driven'))
 ```
 
@@ -649,24 +667,24 @@ Al dataset appena creato aggiungo le colonne relative alle variabili categoriche
 ```{r da variabili fattoriali a variabili dummy}
 
 # Aggiungo la variabile fattoriale 'transmission' a car dummy e la converto in numerica (0 corrispode a 'automatic'):
-car_dummy <- cbind(car_dummy,transmission = car_noduplicati$transmission)
+car_dummy <- cbind(car_dummy,transmission = car_noduplicati_nomake$transmission)
 levels(car_dummy$transmission)<-c(1,0)
 car_dummy$transmission <- as.numeric(levels(car_dummy$transmission))[car_dummy$transmission]
 
 #converto la variabile fattoriale 'make' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~make, data = car_noduplicati))[,-1]
+dummy_temp <- data.frame(model.matrix( ~make, data = car_noduplicati_nomake))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 #converto la variabile fattoriale 'fuel' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~fuel, data = car_noduplicati))[,-1]
+dummy_temp <- data.frame(model.matrix( ~fuel, data = car_noduplicati_nomake))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 #converto la variabile fattoriale 'seller_type' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~seller_type, data = car_noduplicati))[,-1]
+dummy_temp <- data.frame(model.matrix( ~seller_type, data = car_noduplicati_nomake))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 #converto la variabile fattoriale 'owner' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~owner, data = car_noduplicati))[,-1]
+dummy_temp <- data.frame(model.matrix( ~owner, data = car_noduplicati_nomake))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 head(car_dummy)
@@ -693,16 +711,24 @@ print(paste("Numero righe test_set: ", nrow(test_set), sep = " "))
 
 ## Regressione lineare
 
-Per poter eseguire la regressione lineare abbiamo diverse assunzioni da fare .....
+Per poter eseguire la regressione lineare abbiamo diverse assunzioni da fare: DA TRADURRE
 
-Come primo passo realizzo un modello di regressione, sul `train_set` in cui considero tutte le 43 variabili
+1.  **Linearity**: The relationship between X and the mean of Y is linear.
+
+2.  **Homoscedasticity**: The variance of residual is the same for any value of X.
+
+3.  **Independence**: Observations are independent of each other.
+
+4.  **Normality**: For any fixed value of X, Y is normally distributed.
+
+Come primo passo realizzo un modello di regressione, sul `train_set` in cui considero tutte le 30 variabili
 
 ```{r modello completo}
 modello_completo <- lm(log_selling_price ~ ., data=train_set)
 summary(modello_completo)
 ```
 
-Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `Adjusted R-squared: 0.8523`. Il problema di questo modello però è che molti degli attributi non sono significativi, quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set.
+Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `Adjusted R-squared: 0.8516`. Il problema di questo modello però è che molti degli attributi non sono significativi, quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set.
 
 Dalla tabella dei coefficienti si può osservare anche che, dei molti attributi dovuti alla marca dell'auto, quelli che presentano la significatività maggiore sono quelli corrispondenti alle macchine più lussuose. Questa cosa è dovuta al fatto che il prezzo di queste auto si discosta molto dalla maggior parte delle altre auto a parità di motore e utilizzo, in fase di valutazione del prezzo è quindi un parametro da tenere in considerazione.
 
@@ -713,7 +739,7 @@ par(pty="s")
 plot(modello_completo)
 ```
 
-1.  Linearitá delle relazioni tra variabile dipendente e le variabili indipendenti
+1.  Linearità delle relazioni tra variabile dipendente e le variabili indipendenti
 
 2.  Residui distribuiti in modo normale
 
@@ -721,9 +747,9 @@ plot(modello_completo)
 
 4.  Indipendenza dei residui
 
-    ##da sitemare
+    DESCRIVERE BENE GRAFICI (cercare il punto 5496)
 
-Da questi grafici si vede che effettivamente ci sono dei problemi nel modello, in particolare nel `Normal Q-Q` si vede gli `Strandardized residual` a sinistra (con `Theoretical Quantiles` tra -4 e -2) siano piú bassi del valore teorico. Anche nel grafico della `Scale-Location` si vedono delle anomalie
+Da questi grafici si vede che effettivamente ci sono dei problemi nel modello, in particolare nel `Normal Q-Q` si vede gli `Strandardized residual` a sinistra (con `Theoretical Quantiles` tra -4 e -2) siano più bassi del valore teorico. Anche nel grafico della `Scale-Location` si vedono delle anomalie
 
 ### Feature selection
 
