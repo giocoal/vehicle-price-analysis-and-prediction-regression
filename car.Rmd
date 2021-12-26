@@ -167,7 +167,7 @@ Inoltre, dato che gli outlier sono solo osservazioni che si trovano al di sopra 
 ```{r boxplot log}
 par(mfrow=c(2,3))
 for (i in names(car_num)) {
-  boxplot(log(car_num[[i]]), main = '', xlab = i, range = 3)
+  boxplot(log10(car_num[[i]]), main = '', xlab = i, range = 3)
 }
 par(mfrow=c(1,1))
 
@@ -256,8 +256,8 @@ car %>% ggplot()+geom_histogram(aes(selling_price, ..density..), bins = 30, )+ge
 Valutiamo la simmetria e la curtosi della distribuzione dopo l'applicazione della trasformazione logaritmica
 
 ```{r simmetria e curtosi log_selling_price}
-print(paste("Indice di asimmetria della variabile response selling_price:", skew(log(car$selling_price)), sep = " "))
-print(paste("Indice di curtosi della variabile response selling_price:", kurtosi(log(car$selling_price)), sep = " "))
+print(paste("Indice di asimmetria della variabile response selling_price:", skew(log10(car$selling_price)), sep = " "))
+print(paste("Indice di curtosi della variabile response selling_price:", kurtosi(log10(car$selling_price)), sep = " "))
 ```
 
 La variabile target, in seguito alla trasformazione logaritmica, risulta più simmetrica e non più affetta da eccesso di curtosi, quindi questa sarà trasformata prima di procedere con la fase di inferenza.
@@ -348,7 +348,7 @@ for (i in names(car_num)) {
   if (i == 'selling_price'){
     next
   }
-  print(paste("Indice di asimmetria di",i,":", skew(log(car_num[[i]])), sep = " "))
+  print(paste("Indice di asimmetria di",i,":", skew(log10(car_num[[i]])), sep = " "))
 }
 
 ```
@@ -358,7 +358,7 @@ for (i in names(car_num)) {
   if (i == 'selling_price'){
     next
   }
-  print(paste("Indice di curtosi di Pearson di",i,":", kurtosi(log(car_num[[i]])), sep = " "))
+  print(paste("Indice di curtosi di Pearson di",i,":", kurtosi(log10(car_num[[i]])), sep = " "))
 }
 ```
 
@@ -366,7 +366,7 @@ for (i in names(car_num)) {
 #istogrammi 
 #par(mfrow=c(2,3))
 #for (i in c('year','selling_price','km_driven','engine(CC)','max_power(bhp)')) {
-#  hist(log(car_num[[i]]), xlab = i, main = '')
+#  hist(log10(car_num[[i]]), xlab = i, main = '')
 #}
 #par(mfrow=c(1,1))
 
@@ -393,15 +393,15 @@ grid.arrange(plot1, plot2, plot4, plot5, ncol = 2,
 Viene applicata la trasformazione logaritmica a `age`, `engine_CC` e `max_power_bhp` perchè applicando la forma della trasformazione logaritmica la distribuzione migliora sia dal punto di vista della simmetria che della curtosi
 
 ```{r trasformazione logaritmica}
-car <- add_column(car, log_selling_price = log(car$selling_price), .after = "selling_price")
-car <- add_column(car, log_age = log(car$age), .after = "age")
-car <- add_column(car, log_max_power_bhp = log(car$max_power_bhp), .after = "max_power_bhp")
-car <- add_column(car, log_engine_CC = log(car$engine_CC), .after = "engine_CC")
+car <- add_column(car, log_selling_price = log10(car$selling_price), .after = "selling_price")
+car <- add_column(car, log_age = log10(car$age), .after = "age")
+car <- add_column(car, log_max_power_bhp = log10(car$max_power_bhp), .after = "max_power_bhp")
+car <- add_column(car, log_engine_CC = log10(car$engine_CC), .after = "engine_CC")
 
-car_num <- add_column(car_num, log_selling_price = log(car_num$selling_price), .after = "selling_price")
-car_num <- add_column(car_num, log_age = log(car_num$age), .after = "age")
-car_num <- add_column(car_num, log_max_power_bhp = log(car_num$max_power_bhp), .after = "max_power_bhp")
-car_num <- add_column(car_num, log_engine_CC = log(car_num$engine_CC), .after = "engine_CC")
+car_num <- add_column(car_num, log_selling_price = log10(car_num$selling_price), .after = "selling_price")
+car_num <- add_column(car_num, log_age = log10(car_num$age), .after = "age")
+car_num <- add_column(car_num, log_max_power_bhp = log10(car_num$max_power_bhp), .after = "max_power_bhp")
+car_num <- add_column(car_num, log_engine_CC = log10(car_num$engine_CC), .after = "engine_CC")
 ```
 
 ## Analisi distribuzionale variabili qualitative
@@ -592,31 +592,19 @@ Per quanto riguarda le associazioni tra le variabili esplicative, si evidenziano
 
 # Statistica inferenziale
 
-```{r cose da fare}
-
-#T TEST
-#Variable importance
-#F TEST
-#Adjusted R-squared                 quanto bene il modello descrive i dati
-#Residual analysis                  
-#(compare two models with anova)
-
-#Prediction RMSE
-```
-
 ## Preparazione
 
 ### Analisi righe duplicate
 
-Quantifico il numero di righe duplicate presenti
+Quantifico il numero di righe duplicate presenti.
 
-```{r}
+```{r quantifico righe duplicare}
 sum(duplicated(car))
 ```
 
-Sono presenti 1183 righe che descrivono auto uguali, dello stesso anno, con gli stessi km e prezzo. Inoltre queste righe non possono riferirsi alla stessa auto rivenduta più volte altrimenti cambierebbe il campo `owner`. Questa cosa è strana e probabilmente per la maggior parte delle righe è dovuto ad un cattivo inserimento dei dati, per questo decidiamo di rimuoverle.
+Sono presenti 1183 righe che descrivono auto uguali, dello stesso anno, con gli stessi km e prezzo. La cosa é sospetta ed inoltre queste righe non possono riferirsi alla stessa auto rivenduta più volte altrimenti cambierebbe il campo `owner`. Probabilmente per la maggior parte delle righe è dovuto ad un cattivo inserimento dei dati, per questo decidiamo di rimuoverle.
 
-```{r}
+```{r rimuovo righe ripetute e grafico distribuzione selling_price}
 car_noduplicati <- distinct(car)
 
 car %>% ggplot()+geom_histogram(aes(log_selling_price, ..density..), bins = 30, )+geom_density(aes(log_selling_price))+ggtitle('Istogramma del logaritmo di selling_price con righe duplicate')+xlab('Selling Price')+ylab('Densità')
@@ -636,59 +624,77 @@ Rimuovendo le righe duplicate si vede anche un miglioramento nella distribuzione
 
 ### Categorie poco rappresentate
 
-Individuo le marche con un numero di conteggi minore di 13, su cui non potrei fare una corretta statistica inferenziale.
+Individuo le marche con un numero di conteggi minore di 13, su cui non potrei fare una corretta statistica inferenziale una volta splittato il dataset in training e test.
 
 ```{r conteggi per categorie make}
 conteggi <- count(car_noduplicati, make, sort = TRUE)
-nomake<-conteggi[conteggi$n < 13,]
-nomake
+drop<-conteggi[conteggi$n < 13,]
+drop
 ```
 
 Rimuovo le 54 righe riferite a 13 marche poco rappresentate.
 
 ```{r rimozione auto con marche poco rappresentate}
-car_noduplicati_nomake <- droplevels(car_noduplicati[!(car_noduplicati$make %in% nomake$make),])
-
-str(car_noduplicati_nomake$make)
+car_noduplicati_nodrop <- droplevels(car_noduplicati[!(car_noduplicati$make %in% drop$make),])
+str(car_noduplicati_nodrop$make)
 ```
+
+Individuo gli owner con un numero di conteggi minore di 13, su cui non potrei fare una corretta statistica inferenziale una volta splittato il dataset in training e test sets.
+
+```{r conteggi per categorie make}
+conteggi <- count(car_noduplicati, owner, sort = TRUE)
+drop<-conteggi[conteggi$n < 13,]
+drop
+```
+
+```{r rimozione auto con marche poco rappresentate}
+car_noduplicati_nodrop <- droplevels(car_noduplicati_nodrop[!(car_noduplicati_nodrop$owner %in% drop$owner),])
+str(car_noduplicati_nodrop$owner)
+```
+
+Rimuovo le 5 righe riferite a Test Drive Car perché poco rappresentata.
+
+```{r rimozione auto con marche poco rappresentate}
+car_noduplicati_nodrop <- droplevels(car_noduplicati_nodrop[!(car_noduplicati_nodrop$owner %in% drop$owner),])
+str(car_noduplicati_nodrop$owner)
+```
+
+Le altre variabili categoriali presentano tutte una numerosità maggiore di 13 per ogni livello.
 
 ### Dataset con variabili dummy
 
-Creo un nuovo dataset chiamato `car_dummy` al quale aggiungo le variabili quantitative in forma logaritmica dove necessario. Successivamente elimino gli attributi che sono molto correlati con gli altri presenti e poco correlati con la variabile target (`log_engine_CC` e `seats`).
-
-```{r subset delle variabili quantitative}
-
-car_dummy <- car_noduplicati_nomake[,car_nums_colnames_log]
-car_dummy <- select(car_dummy, -c('seats', 'log_engine_CC', 'km_driven'))
-```
-
-Al dataset appena creato aggiungo le colonne relative alle variabili categoriche. Per ogni attributo vengono generate n-1 nuove colonne dove n è il numero di modalità di quel particolare attributo.
+Creo un nuovo dataset chiamato `car_dummy` al quale aggiungo le variabili quantitative in forma logaritmica dove necessario. Al dataset appena creato aggiungo le colonne relative alle variabili categoriche. Per ogni attributo vengono generate n-1 nuove colonne dove n è il numero di modalità di quel particolare attributo.
 
 ```{r da variabili fattoriali a variabili dummy}
 
+#subset delle variabili quantitative
+car_dummy <- car_noduplicati_nodrop[,car_nums_colnames_log]
+
 # Aggiungo la variabile fattoriale 'transmission' a car dummy e la converto in numerica (0 corrispode a 'automatic'):
-car_dummy <- cbind(car_dummy,transmission = car_noduplicati_nomake$transmission)
+car_dummy <- cbind(car_dummy,transmission = car_noduplicati_nodrop$transmission)
 levels(car_dummy$transmission)<-c(1,0)
 car_dummy$transmission <- as.numeric(levels(car_dummy$transmission))[car_dummy$transmission]
 
 #converto la variabile fattoriale 'make' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~make, data = car_noduplicati_nomake))[,-1]
+dummy_temp <- data.frame(model.matrix( ~make, data = car_noduplicati_nodrop))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 #converto la variabile fattoriale 'fuel' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~fuel, data = car_noduplicati_nomake))[,-1]
+dummy_temp <- data.frame(model.matrix( ~fuel, data = car_noduplicati_nodrop))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 #converto la variabile fattoriale 'seller_type' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~seller_type, data = car_noduplicati_nomake))[,-1]
+dummy_temp <- data.frame(model.matrix( ~seller_type, data = car_noduplicati_nodrop))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 #converto la variabile fattoriale 'owner' in dummy e la aggiungo a car_dummy:
-dummy_temp <- data.frame(model.matrix( ~owner, data = car_noduplicati_nomake))[,-1]
+dummy_temp <- data.frame(model.matrix( ~owner, data = car_noduplicati_nodrop))[,-1]
 car_dummy <-cbind(car_dummy,dummy_temp)
 
 head(car_dummy)
 ```
+
+Con tutti i valori a zero per una classe di attiributi si ottiene: `Audi` per la classe `make`, `First Owner` per la classe `owner`, `Automatic` per la classe `transmission`, `Diesel` per la classe `fuel`, `Individual` per la classe `seller_type`.
 
 ### Training e Test sets
 
@@ -711,26 +717,30 @@ print(paste("Numero righe test_set: ", nrow(test_set), sep = " "))
 
 ## Regressione lineare
 
-Per poter eseguire la regressione lineare abbiamo diverse assunzioni da fare: DA TRADURRE
+Per poter eseguire la regressione lineare abbiamo diverse assunzioni da fare:
 
-1.  **Linearity**: The relationship between X and the mean of Y is linear.
+-   **Linearitá** tra la variabile target e i regressori
 
-2.  **Homoscedasticity**: The variance of residual is the same for any value of X.
+-   **Omoschedasticitá**: la varianza dei residui sia omogenea
 
-3.  **Independence**: Observations are independent of each other.
+-   **Indipendenza** tra le diverse osservazioni
 
-4.  **Normality**: For any fixed value of X, Y is normally distributed.
+-   **Normalitá** della distribuzione dei residui
 
-Come primo passo realizzo un modello di regressione, sul `train_set` in cui considero tutte le 30 variabili
+-   Bassa **multicollinearitá**
+
+Andremo a verificare se queste assunzioni sono verificate per ogni modello.
+
+Iniziamo quindi realizzando un modello di regressione sul `train_set` in cui considero tutte le variabili.
 
 ```{r modello completo}
 modello_completo <- lm(log_selling_price ~ ., data=train_set)
 summary(modello_completo)
 ```
 
-Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `Adjusted R-squared: 0.8516`. Il problema di questo modello però è che molti degli attributi non sono significativi, quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set.
+Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `Adjusted R-squared: 0.8587`. Il problema di questo modello però è che diversi attributi sono poco significativi quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set. Inoltre alcuni degli attributi presenti sono correlati tra loro e dovremo quindi procedere a rimuoverli.
 
-Dalla tabella dei coefficienti si può osservare anche che, dei molti attributi dovuti alla marca dell'auto, quelli che presentano la significatività maggiore sono quelli corrispondenti alle macchine più lussuose. Questa cosa è dovuta al fatto che il prezzo di queste auto si discosta molto dalla maggior parte delle altre auto a parità di motore e utilizzo, in fase di valutazione del prezzo è quindi un parametro da tenere in considerazione.
+Dalla tabella dei coefficienti si può osservare anche che gli attributi dummy che presentano la significatività maggiore sono quelli corrispondenti alle modalitá piú diverse dalla "modalitá zero", quella che si ottiene con tutte le colonne di una certa classe uguali a zero (es. BMW e Mercedes sono le piú simili alle Audi).
 
 Studiamo ora residui del modello generando i diagnostic plots.
 
@@ -739,33 +749,40 @@ par(pty="s")
 plot(modello_completo)
 ```
 
-1.  Linearità delle relazioni tra variabile dipendente e le variabili indipendenti
+Analizziamo separatamente i 4 diversi grafici:
 
-2.  Residui distribuiti in modo normale
+1.  Il primo mostra eventuali pattern non lineari nei residui che potrebbero suggerire una relazione non lineare tra target e regressori. Nel nostro caso risulta come ci si aspettava una retta orizzontale.
 
-3.  Omoschedasticitá (varianza costante per i residui)
+2.  Il secondo verifica se la distribuzione dei residui é Gaussiana. Nel nostro caso per valori dei quantili teorici tra -2 e -4 c'é un allontanamento dei dati dalla retta, questo mostra un'asimmetria della distribuzione che affronteremo in seguito.
 
-4.  Indipendenza dei residui
+3.  Il terzo verifica l'assunzione dell'omoschedasticitá. Nel nostro caso si ottiene con buona approssimazione una retta orizzontale che verifica l'assunzione.
 
-    DESCRIVERE BENE GRAFICI (cercare il punto 5496)
+4.  Il quarto permette di trovare eventuali outliers rimasti che potrebbero modificare in modo significativo il modello. Dei nostri punti nessuno si trova oltre la Cook's distance; il più vicino è il punto 5491 che, dato che compare anche negli altri grafici, decidiamo di rimuoverlo.
 
-Da questi grafici si vede che effettivamente ci sono dei problemi nel modello, in particolare nel `Normal Q-Q` si vede gli `Strandardized residual` a sinistra (con `Theoretical Quantiles` tra -4 e -2) siano più bassi del valore teorico. Anche nel grafico della `Scale-Location` si vedono delle anomalie
+```{r rimuovo osservazione outlier}
+train_set <- subset(train_set, !row.names(train_set) == 5491)
+```
 
 ### Feature selection
 
-Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi presenti.
+Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi presenti. Per prima cosa andiamo a rimuovere dal dataset gli attributi che presentano problemi di collinearitá, facciamo riferimento alla tabella delle correlazioni della sezione "Analisi delle correlazioni". Dalla tabella si puó vedere che l'attributo `log_engine_CC` é molto correlato con `log_max_power_bhp` e decidiamo dunque di rimuoverlo.
 
-Guardando la tabella delle correlazioni della sezione "Analisi delle correlazioni" è facile notare come `log_max_power_bhp` e `log_age` siano i due attributi più correlati con `log_selling_price` rispettivamente con valore di `0.74` e `0.67`. Scegliamo quindi `log_max_power_bhp` come primo attributo con cui costruire il modello.
+```{r rimuovo colonne seats e log_engine_CC}
+train_set <- select(train_set, -c('log_engine_CC'))
+test_set <- select(test_set, -c('log_engine_CC'))
+```
+
+Dalla tabella delle correlazioni si puó inoltre notare come `log_max_power_bhp` e `log_age` siano i due attributi più correlati con `log_selling_price` rispettivamente con valore di `0.74` e `0.67`. Scegliamo quindi `log_max_power_bhp` come primo attributo con cui costruire il nuovo modello.
 
 ```{r primo modello con solo log_max_power_bhp}
 modello_minimo <- lm(log_selling_price ~ log_max_power_bhp, data=train_set)
 summary(modello_minimo)
 ```
 
-Come ci aspettavamo l'attributo `log_max_power_bhp` è molto significativo per la descrizione del modello con un p-value molto basso e un R quadro comunque abbastanza elevato `Adjusted R-squared:  0.4672.` Vediamo ora qui di seguito la rappresentazione grafica della retta trovata.
+Come ci aspettavamo l'attributo `log_max_power_bhp` è molto significativo per la descrizione del modello con un p-value molto basso e un R quadro comunque abbastanza elevato `Adjusted R-squared:  0.4451`. Vediamo ora qui di seguito la rappresentazione grafica della retta trovata.
 
 ```{r grafico modello semplificato}
-ggplot(train_set, aes(x = log_max_power_bhp, y = log_selling_price)) + geom_point() + stat_smooth(method = "lm", col = "red")
+ggplot(train_set, aes(x = log_max_power_bhp, y = log_selling_price)) + geom_point() + stat_smooth(formula = y ~ x, method = "lm", col = "red")
 ```
 
 Cerchiamo ora di raffinare il modello andando ad includere un numero maggiore di attributi. Per farlo eseguiamo un processo di forward selection; dato il grande numero di attributi presenti sfruttiamo la funzione stepAIC.
@@ -773,6 +790,7 @@ Cerchiamo ora di raffinare il modello andando ad includere un numero maggiore di
 In prima battuta utilizziamo il `modello_minimo` appena realizzato, settiamo `direction = "both"` e indichiamo come scope il `modello_completo`.
 
 ```{r modello stepAIC, include=FALSE, results='hide'}
+modello_completo <- lm(log_selling_price ~ ., data=train_set) #ricalcolo il modello perché ho rimosso la colonna log_engine_CC
 modello_stepAIC <- stepAIC(modello_minimo, direction = "both", scope = formula(modello_completo))
 ```
 
@@ -780,7 +798,7 @@ modello_stepAIC <- stepAIC(modello_minimo, direction = "both", scope = formula(m
 summary(modello_stepAIC)
 ```
 
-Il processo di stepAIC ha portato all'esclusione di 12 attributi. Questo ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8525`, cioè identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance.
+Il processo di stepAIC ha portato all'esclusione di 2 attributi: `makeBMW` e `seller_typeTrustmark.Dealer`. Questo ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8589`, cioè praticamente identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance.
 
 Andiamo allora a graficare le caratteristiche di questo nuovo modello.
 
@@ -789,9 +807,15 @@ par(pty="s")
 plot(modello_stepAIC)
 ```
 
-#commenti grafici
+I grafici risultano molto simili a quelli del modello completo presentando lo stesso problema nel Normal Q-Q.
 
-Nel modello sono presenti però ancora diversi attributi che sarebbe meglio rimuovere poiché poco significativi. Procediamo allora nuovamente ad utilizzare la funzione stepAIC settando il parametro k, che limita la significativitá dei parametri, ad un valore corrispondente a `0.001`. Per calcolare il valore di k fruttiamo la funzione `qchisq`.
+Per rimuovere altri attributi é possibile procedere in due modi:
+
+-   selezionare una diversa "modalitá nulla"
+
+-   ricorrere nuovamente ad utilizzare la funzione stepAIC settando il parametro k, che limita la significatività dei parametri, ad un valore corrispondente a `0.001`.
+
+Ricorriamo a questa seconda opzione utilizzando la funzione `qchisq` per calcolare il parametro k.
 
 ```{r modello stepAIC con parametro k, include=FALSE, results='hide'}
 k_value <- qchisq(0.001, 1, lower.tail = F)
@@ -802,7 +826,7 @@ modello_stepAIC_k <- stepAIC(modello_minimo, direction = "both", scope = formula
 summary(modello_stepAIC_k)
 ```
 
-Risultano quindi esclusi dal modello 21 degli attributi iniziali, il modello è ora composto da 22 attributi molto significativi. Il valore dell'R quadro aggiustato é `Adjusted R-squared:  0.851`, cioè praticamente identico a quello individuato in precedenza.
+Risultano quindi esclusi dal modello 8 degli attributi iniziali, il modello è ora composto da 23 attributi molto significativi. Il valore dell'R quadro aggiustato é `Adjusted R-squared:  0.8568`, cioè praticamente identico a quello individuato in precedenza.
 
 Anche in questo caso andiamo a mostrare i grafici dei residui del modello trovato.
 
@@ -811,9 +835,11 @@ par(pty="s")
 plot(modello_stepAIC_k)
 ```
 
-#commento grafico
+I grafici dei residui anche in questo caso risultano abbastanza buoni. La forma anomala del Normal Q-Q indica una asimmetria della distribuzione; questo é probabilmente dovuto alla non perfetta normalità delle variabili considerate.
 
-Procediamo ora con il test F. Utilizzando ora la funzione Anova confrontiamo il modello ottenuto con la funzione stepAIC e quello ottenuto dal processo di stepAIC con parametro k per vedere se la rimozione degli attributi meno significativi con l'uso del parametro k è giustificata.
+Nonostante il modello descriva bene i dati potrebbe essere molto migliore se ci fosse una variabile che considera lo stato dell'auto, questo infatti é uno dei parametri che maggiormente puó influenzare il costo di un'auto usata.
+
+Utilizzando ora la funzione `anova` confrontiamo il modello ottenuto con la funzione stepAIC e quello ottenuto dal processo di stepAIC con parametro k per vedere se la rimozione degli attributi meno significativi con l'uso del parametro k è giustificata.
 
 ```{r confronto modello_completo con modello_stepAIC_k}
 anova(modello_completo, modello_stepAIC_k)
