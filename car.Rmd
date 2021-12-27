@@ -641,13 +641,13 @@ str(car_noduplicati_nodrop$make)
 
 Individuo gli owner con un numero di conteggi minore di 13, su cui non potrei fare una corretta statistica inferenziale una volta splittato il dataset in training e test sets.
 
-```{r conteggi per categorie make}
+```{r conteggi per categorie owner}
 conteggi <- count(car_noduplicati, owner, sort = TRUE)
 drop<-conteggi[conteggi$n < 13,]
 drop
 ```
 
-```{r rimozione auto con marche poco rappresentate}
+```{r rimozione auto con categorie owner poco rappresentate}
 car_noduplicati_nodrop <- droplevels(car_noduplicati_nodrop[!(car_noduplicati_nodrop$owner %in% drop$owner),])
 str(car_noduplicati_nodrop$owner)
 ```
@@ -738,9 +738,9 @@ modello_completo <- lm(log_selling_price ~ ., data=train_set)
 summary(modello_completo)
 ```
 
-Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `Adjusted R-squared: 0.8587`. Il problema di questo modello però è che diversi attributi sono poco significativi quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set. Inoltre alcuni degli attributi presenti sono correlati tra loro e dovremo quindi procedere a rimuoverli.
+Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `Adjusted R-squared: 0.8599`. Il problema di questo modello però è che diversi attributi sono poco significativi quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set. Inoltre alcuni degli attributi presenti sono correlati tra loro e dovremo quindi procedere a rimuoverli.
 
-Dalla tabella dei coefficienti si può osservare anche che gli attributi dummy che presentano la significatività maggiore sono quelli corrispondenti alle modalitá piú diverse dalla "modalitá zero", quella che si ottiene con tutte le colonne di una certa classe uguali a zero (es. BMW e Mercedes sono le piú simili alle Audi).
+Dalla tabella dei coefficienti si può osservare anche che gli attributi dummy che presentano la significatività maggiore sono quelli corrispondenti alle modalità più diverse dalla "modalità zero", quella che si ottiene con tutte le colonne di una certa classe uguali a zero (es. BMW e Mercedes sono le auto più simili alla marca Audi).
 
 Studiamo ora residui del modello generando i diagnostic plots.
 
@@ -765,7 +765,7 @@ train_set <- subset(train_set, !row.names(train_set) == 5491)
 
 ### Feature selection
 
-Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi presenti. Per prima cosa andiamo a rimuovere dal dataset gli attributi che presentano problemi di collinearitá, facciamo riferimento alla tabella delle correlazioni della sezione "Analisi delle correlazioni". Dalla tabella si puó vedere che l'attributo `log_engine_CC` é molto correlato con `log_max_power_bhp` e decidiamo dunque di rimuoverlo.
+Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi presenti. Per prima cosa andiamo a rimuovere dal dataset gli attributi che presentano problemi di multicollinearitá, facciamo riferimento alla tabella delle correlazioni della sezione "Analisi delle correlazioni". Dalla tabella si puó vedere che l'attributo `log_engine_CC` é molto correlato con `log_max_power_bhp` e decidiamo dunque di rimuoverlo.
 
 ```{r rimuovo colonne seats e log_engine_CC}
 train_set <- select(train_set, -c('log_engine_CC'))
@@ -809,9 +809,9 @@ plot(modello_stepAIC)
 
 I grafici risultano molto simili a quelli del modello completo presentando lo stesso problema nel Normal Q-Q.
 
-Per rimuovere altri attributi é possibile procedere in due modi:
+Per ridurre ulteriormente il numero di attributi da cui è composto il modello è possibile procedere in due modi:
 
--   selezionare una diversa "modalitá nulla"
+-   selezionare una diversa "modalitá nulla" che abbia un maggior numero di attributi simili (es. una marca che faccia auto in una fascia di prezzo inferiore rispetto ad Audi)
 
 -   ricorrere nuovamente ad utilizzare la funzione stepAIC settando il parametro k, che limita la significatività dei parametri, ad un valore corrispondente a `0.001`.
 
@@ -835,9 +835,9 @@ par(pty="s")
 plot(modello_stepAIC_k)
 ```
 
-I grafici dei residui anche in questo caso risultano abbastanza buoni. La forma anomala del Normal Q-Q indica una asimmetria della distribuzione; questo é probabilmente dovuto alla non perfetta normalità delle variabili considerate.
+I grafici dei residui anche in questo caso risultano abbastanza buoni. La forma anomala del Normal Q-Q indica una asimmetria della distribuzione; questo è probabilmente dovuto alla non perfetta normalità delle variabili considerate.
 
-Nonostante il modello descriva bene i dati potrebbe essere molto migliore se ci fosse una variabile che considera lo stato dell'auto, questo infatti é uno dei parametri che maggiormente puó influenzare il costo di un'auto usata.
+Nonostante il modello descriva bene i dati potrebbe essere molto migliore se ci fosse una variabile riferita allo stato dell'auto, questo infatti è uno dei parametri che maggiormente può influenzare il costo di un'auto usata.
 
 Utilizzando ora la funzione `anova` confrontiamo il modello ottenuto con la funzione stepAIC e quello ottenuto dal processo di stepAIC con parametro k per vedere se la rimozione degli attributi meno significativi con l'uso del parametro k è giustificata.
 
