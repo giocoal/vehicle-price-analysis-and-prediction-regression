@@ -916,7 +916,7 @@ durbinWatsonTest(modello_stepAIC_k)
 
 #applico il test dell'eteroschedasticità per valutare che le varianze dei termini di errore non sono costanti. Si possono identificare varianze non costanti negli errori dalla presenza di una forma ad imbuto nel grafico residuo, lo stesso con quello di linearità. In questo caso affinchè il test dell'eteroschedasticità sia negativo il p-value deve essere minore di 0.05 per cui in questo caso il nostro modello presenta il problema dell'eteroschedasticità e assumendo come ipotesi nulla quella della non presenza dell'eteroschedasticità rifiutaremo l'ipotesi nulla.
 
-###########sistemare l'eteroschedasticità fino ad ottenere il p-value>0.05
+###########sistemare l'eteroschedasticità accettata perchè accetta l'omoschedasticità rifiutando appunto l'eteroschedasticità
 
 ```{r eteroschedasticità}
 library(lmtest)
