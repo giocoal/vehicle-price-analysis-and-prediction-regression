@@ -849,11 +849,11 @@ anova(modello_completo, modello_stepAIC_k)
 anova(modello_stepAIC, modello_stepAIC_k)
 ```
 
-###verificare se é accettabile quel valore di F #da verificare se tutto corretto: La funzione anova prenderà gli oggetti del modello come argomenti e restituirà un ANOVA che verifica se il modello più complesso (modificato dallo stepAIC k) è significativamente migliore nell'acquisizione dei dati rispetto al modello più semplice (modello con lo stepAIC). Se il p-value risultante è sufficientemente basso (di solito inferiore a 0,05), concludiamo che il modello più complesso è significativamente migliore del modello più semplice, favorendo quindi il modello più complesso. Se il p-value non è sufficientemente basso (di solito maggiore di 0,05), dovremmo privilegiare il modello più semplice. Nel nostro caso nel secondo modello come indicato da df=-9 lo stepAIC ha rimosso 9 attributi per migliorare il modello, per cui il secondo modello presenta 9 attributi in meno rispetto al primo. Nel nostro caso inoltre il p-value è sicuramente più basso rispetto a 0,05 per cui il modello nuovo con 9 attributi in meno rispetto il primo è sicuramente migliore per cui tenderemomna privilegiare il secondo modello. In sostanza se il p-value è minore del livello di significatività scelto (solitamente pari a 0,05) allora si può concludere che il modello fornisce un adattamento migliore ai dati.
+La funzione anova prenderà gli oggetti del modello come argomenti e restituirà un ANOVA che verifica se il modello più complesso (modificato dallo stepAIC k) è significativamente migliore nell'acquisizione dei dati rispetto al modello più semplice (modello con lo stepAIC). Se il p-value risultante è sufficientemente basso (di solito inferiore a 0,05), concludiamo che il modello più complesso è significativamente migliore del modello più semplice. Se il p-value è maggiore di 0,05, dovremmo privilegiare il modello più semplice (stepAIC). Nel nostro caso inoltre il p-value è sicuramente più basso rispetto a 0,05 per cui il modello nuovo è sicuramente migliore e tenderemo a privilegiare quest'ultimo. In sostanza se il p-value è minore del livello di significatività scelto (solitamente pari a 0,05) allora si può concludere che il modello fornisce un adattamento migliore ai dati.
 
-La statistica F è semplicemente un rapporto di due varianze. Le varianze sono una misura della dispersione, ovvero quanto i dati sono dispersi dalla media. Valori maggiori rappresentano una dispersione maggiore. Se le osservazioni per ciascun gruppo sono vicine alla media del gruppo, la varianza all'interno dei campioni è bassa. Tuttavia, se le osservazioni per ciascun gruppo sono più lontane dalla media del gruppo, la varianza all'interno dei campioni è maggiore. Nel nostro caso abbiamo una f-test di 7 per cui non è un valore eccessivamente elevato anche se in generale, una statistica F è un rapporto di due quantità che dovrebbero essere approssimativamente uguali nell'ipotesi nulla, che produce una statistica F di circa 1.
+La statistica F è semplicemente un rapporto di due varianze. Le varianze sono una misura della dispersione, ovvero quanto i dati sono dispersi dalla media. Valori maggiori rappresentano una dispersione maggiore. Se le osservazioni per ciascun gruppo sono vicine alla media del gruppo, la varianza all'interno dei campioni è bassa. Tuttavia, se le osservazioni per ciascun gruppo sono più lontane dalla media del gruppo, la varianza all'interno dei campioni è maggiore. Nel nostro caso abbiamo una f-test di 13,8 per cui non è un valore eccessivamente elevato anche se in generale, una statistica F è un rapporto di due quantità che dovrebbero essere approssimativamente uguali nell'ipotesi nulla, che produce una statistica F di circa 1.
 
-#valutazione dell'rmse nel caso del modello stepAIC con tutte le variabili e del modello stepAIC k con 9 variabili in meno
+### Calcolo dell'RMSE per il modello stepAIC e per il modello stepAIC k 
 
 ```{r valutazione dell'rmse nel caso dei due modelli applicati}
 lm_pred <- predict(modello_stepAIC, newdata = test_set %>% select(-log_selling_price))
@@ -879,11 +879,9 @@ R2(lm_pred, test_set$log_selling_price)
 R2(lm_pred2, test_set$log_selling_price)
 ```
 
-# in questo caso è strano che la radice dell'errore quadratico medio sia più bassa nel primo modello dello strepAIC rispetto al secondo, infatti nel primo modello è di 0.2929, mentre nel secondo modello dello stepAIC k è di 0.2938, anche se c'è un distacco davvero piccolissimo. Inoltre sembra che ci sia un problema di overfitting del modello sia del primo che del secondo (anche se sempre con valori minimi) perchè si ha sia nel primo che nel secondo caso un valore dell'rmse più basso nel training test rispetto che nel test set suggerendo che il nostro modello di training potrebbe essere migliore il set di dati di set.
+Il valore RMSE (errore quadratico medio, Root Mean Squared Error) è una misura di errore assoluta in cui le deviazioni vengono elevate al quadrato per evitare che valori positivi e negativi possano annullarsi l'uno con l'altro. Con questa misura, inoltre, gli errori di valore maggiore vengono amplificati, caratteristica che può agevolare l'eliminazione dei metodi che presentano gli errori più significativi. L'RMSE è migliore del MAE (errore medio assoluto) perchè come detto poco prima l'RMSE eleva al quadrato la differenza tra i valori effettivi e i valori previsti, il che significa che la previsione con un errore maggiore sarà notevolmente penalizzata. Più basso è il valore dell'RMSE e migliore è il modello rappresentato. Nel nostro caso i valori dell'RMSE calcolati per entrambi i modelli, sia sul training test che sul test set, danno risultati praticamente identici per cui possiamo affermare che i modelli sono molto buoni nel predire il test set.
 
-#controllo la linearità del modello dello stepAIC k perchè la regressione lineare è un modello parametrico, il che significa che per creare un'equazione, il modello segue alcune ipotesi classiche. La regressione lineare che non segue questa assunzione può essere fuorviante o semplicemente ha uno stimatore distorto. Per questa sezione, controlliamo solo il secondo modello. Il modello di regressione lineare presuppone che esista una relazione lineare tra i predittori e la risposta. Se la vera relazione è tutt'altro che lineare, allora praticamente tutte le conclusioni che traiamo dall'adattamento sono sospette. Inoltre, l'accuratezza della previsione del modello può essere notevolmente ridotta. I grafici residui sono un utile strumento grafico per identificare la non linearità. Se c'è un pattern nel grafico residuo, significa che il modello può essere ulteriormente migliorato o che non soddisfa l'ipotesi di linearità. Il grafico mostra la relazione tra i residui/errori con i valori previsti.
-
-######## la linearità è accettata
+### Linearità
 
 ```{r controllo linearità}
 linearità<- data.frame(residual = modello_stepAIC_k$residuals, fitted = modello_stepAIC_k$fitted.values)
@@ -894,18 +892,9 @@ linearità %>% ggplot(aes(fitted, residual)) + geom_point() + geom_smooth() + ge
 
 ```
 
-#applico il test sulla normalità del modello applicando il test di shapiro_wilk. Si nota che i residui non seguono una distribuzione normale perchè il p-value è molto più piccolo di 0.05 e prendendo come ipotesi nulla la normalità dei residui bisogna respingerla e accettare l'ipotesi alternativa.
+Controllo la linearità del modello dello stepAIC k perchè la regressione lineare è un modello parametrico, il che significa che per creare un'equazione, il modello segue alcune ipotesi classiche. La regressione lineare che non segue questa assunzione può essere fuorviante o semplicemente ha uno stimatore distorto. Per questa sezione, controlliamo solo il secondo modello. Il modello di regressione lineare presuppone che esista una relazione lineare tra i predittori e la risposta. Se la vera relazione è tutt'altro che lineare, allora praticamente tutte le conclusioni che traiamo dall'adattamento sono sospette. Inoltre, l'accuratezza della previsione del modello può essere notevolmente ridotta. I grafici residui sono un utile strumento grafico per identificare la non linearità. Se c'è un pattern nel grafico residuo, significa che il modello può essere ulteriormente migliorato o che non soddisfa l'ipotesi di linearità. Il grafico mostra la relazione tra i residui/errori con i valori previsti e come il grafico fa notare la linearità viene accettata
 
-#####sistemare la normalità fino ad ottenere il p-value>0.05
-
-```{r sharipo_wilk}
-shapiro.test(modello_stepAIC_k$residuals)
-hist(modello_stepAIC_k$residuals)
-```
-
-#applico il test dell'autocorrelazione. Gli errori standard calcolati per i coefficienti di regressione stimati o i valori adattati si basano sull'assunzione di termini di errore non correlati, ossia nessuna autocorrelazione. Se infatti c'è correlazione tra i termini di errore, allora gli errori standard stimati tenderanno a sottostimare i veri errori standard. Di conseguenza, gli intervalli di confidenza e previsione saranno più ristretti di quanto dovrebbero essere. Al momento si assume che l'ipotesi nulla sia che non c'è autocorrelazione. Qui si può notare che nel modello utilizzato per l'applicazione del modello D-W si ha un valore di 2 per cui non è presente autocorrelazione. Nei casi in cui si trovano valori molto inferiori a 2 allora siamo in presenza di autocorrelazione.
-
-############l'autocorrelazione è accettata (non è presente)
+### Autocorrelazione
 
 ```{r autocorrelazione}
 library(car)
@@ -914,9 +903,9 @@ durbinWatsonTest(modello_stepAIC_k)
 
 ```
 
-#applico il test dell'eteroschedasticità per valutare che le varianze dei termini di errore non sono costanti. Si possono identificare varianze non costanti negli errori dalla presenza di una forma ad imbuto nel grafico residuo, lo stesso con quello di linearità. In questo caso affinchè il test dell'eteroschedasticità sia negativo il p-value deve essere minore di 0.05 per cui in questo caso il nostro modello presenta il problema dell'eteroschedasticità e assumendo come ipotesi nulla quella della non presenza dell'eteroschedasticità rifiutaremo l'ipotesi nulla.
+Applicando il test dell'autocorrelazione si nota che gli errori standard calcolati per i coefficienti di regressione stimati o i valori adattati si basano sull'assunzione di termini di errore non correlati, ossia nessuna autocorrelazione. Se infatti ci fosse correlazione tra i termini di errore, allora gli errori standard stimati tenderebbero a sottostimare i veri errori standard. Di conseguenza, gli intervalli di confidenza e previsione saranno più ristretti di quanto dovrebbero essere. Al momento si assume che l'ipotesi nulla sia che non c'è autocorrelazione. Qui si può notare che nel modello utilizzato per l'applicazione del modello D-W si ha un valore di 2 per cui non è presente autocorrelazione. Nei casi in cui si trovano valori molto inferiori a 2 allora siamo in presenza di autocorrelazione.
 
-###########sistemare l'eteroschedasticità accettata perchè accetta l'omoschedasticità rifiutando appunto l'eteroschedasticità
+### Eteroschedasticità
 
 ```{r eteroschedasticità}
 library(lmtest)
@@ -925,23 +914,13 @@ linearità%>% ggplot(aes(fitted, residual)) + geom_point() + theme_light() + geo
 
 ```
 
-#test della multicollinearità. Per multicollinearità si intende una correlazione tra le variabili/predittori indipendenti. Affinchè non sia presente multicollinearità tra le variabili i valori devono essere al di sotto del valore 5. Nel modello preso in considerazione per cui non vi sono problemi di multicollinearità.
+Applico il test dell'eteroschedasticità per valutare che le varianze dei termini di errore non sono costanti. Si possono identificare varianze non costanti negli errori dalla presenza di una forma ad imbuto nel grafico residuo, lo stesso con quello di linearità. In questo caso affinchè il test dell'eteroschedasticità sia negativo il p-value deve essere minore di 0.05 per cui in questo caso il nostro modello non presenta il problema dell'eteroschedasticità e assumendo come ipotesi nulla quella della non presenza dell'eteroschedasticità accetteremo la stessa.
 
-########### la multicollinearità non è presente quindi accetto i valori ottenuti
+### Multicollinearità
 
 ```{r multicollinearità}
 vif(modello_stepAIC_k)
 
 ```
 
-#miglioriamo il modello
-
-#controllo la correlazione dei dati per eliminare le variabili troppo correlate fra di loro ma come già visto dal test della multicollinearità non ci sono problemi per quanto riguarda le correlazioni fra le variabili
-
-```{r controllo la correlazione}
-ggcorr(modello_stepAIC$model, label = TRUE, label_size = 2.5, hjust = 1, layout.exp = 15)
-
-ggcorr(modello_stepAIC_k$model, label = TRUE, label_size = 2, hjust = 1, layout.exp = 15)
-
-cor(modello_stepAIC_k$model)
-```
+Per multicollinearità si intende una correlazione tra le variabili/predittori indipendenti. Affinchè non sia presente multicollinearità tra le variabili i valori devono essere al di sotto del valore 5. Nel modello preso in considerazione non vi sono valori uguali o superiori a 5 per cui non ci sono problemi di multicollinearità per cui accetto i valori ottenuti.
