@@ -620,11 +620,11 @@ qqnorm(car_noduplicati$log_selling_price, main = "Normal Q-Q Plot senza righe du
 qqline(car_noduplicati$log_selling_price)
 ```
 
-Rimuovendo le righe duplicate si vede anche un miglioramento nella distribuzione della variabile `log_selling_price`. Anche il Normal Q-Q Plot é migliorato anche se le code risultano comunque un pó piú spesse della distribuzione normale.
+Rimuovendo le righe duplicate si vede anche un miglioramento nella distribuzione della variabile `log_selling_price`. Anche il Normal Q-Q Plot é migliorato anche se le code risultano comunque un po' più spesse della distribuzione normale.
 
 ### Categorie poco rappresentate
 
-Individuo le marche con un numero di conteggi minore di 13, su cui non potrei fare una corretta statistica inferenziale una volta splittato il dataset in training e test.
+Individuo le marche con un numero di conteggi minore di 13, su cui non potrei fare una corretta statistica inferenziale una volta splittato il dataset in `train_set` e `test_set`.
 
 ```{r conteggi per categorie make}
 conteggi <- count(car_noduplicati, make, sort = TRUE)
@@ -639,7 +639,7 @@ car_noduplicati_nodrop <- droplevels(car_noduplicati[!(car_noduplicati$make %in%
 str(car_noduplicati_nodrop$make)
 ```
 
-Individuo gli owner con un numero di conteggi minore di 13, su cui non potrei fare una corretta statistica inferenziale una volta splittato il dataset in training e test sets.
+Individuo gli owner con un numero di conteggi minore di 13, su cui non potrei fare una corretta statistica inferenziale una volta splittato il dataset in `train_set` e `test_set`.
 
 ```{r conteggi per categorie owner}
 conteggi <- count(car_noduplicati, owner, sort = TRUE)
@@ -652,7 +652,7 @@ car_noduplicati_nodrop <- droplevels(car_noduplicati_nodrop[!(car_noduplicati_no
 str(car_noduplicati_nodrop$owner)
 ```
 
-Rimuovo le 5 righe riferite a Test Drive Car perché poco rappresentata.
+Rimuovo le 5 righe riferite a `Test Drive Car` perché poco rappresentata.
 
 ```{r rimozione auto con marche poco rappresentate}
 car_noduplicati_nodrop <- droplevels(car_noduplicati_nodrop[!(car_noduplicati_nodrop$owner %in% drop$owner),])
@@ -663,7 +663,7 @@ Le altre variabili categoriali presentano tutte una numerosità maggiore di 13 p
 
 ### Dataset con variabili dummy
 
-Creo un nuovo dataset chiamato `car_dummy` al quale aggiungo le variabili quantitative in forma logaritmica dove necessario. Al dataset appena creato aggiungo le colonne relative alle variabili categoriche. Per ogni attributo vengono generate n-1 nuove colonne dove n è il numero di modalità di quel particolare attributo.
+Creo un nuovo dataset chiamato `car_dummy` al quale aggiungo le variabili quantitative in forma logaritmica dove necessario. Al dataset appena creato aggiungo le colonne relative alle variabili categoriche in formato dummy. Per ogni attributo vengono generate n-1 nuove colonne dove n è il numero di modalità di quel particolare attributo.
 
 ```{r da variabili fattoriali a variabili dummy}
 
@@ -694,13 +694,13 @@ car_dummy <-cbind(car_dummy,dummy_temp)
 head(car_dummy)
 ```
 
-Con tutti i valori a zero per una classe di attiributi si ottiene: `Audi` per la classe `make`, `First Owner` per la classe `owner`, `Automatic` per la classe `transmission`, `Diesel` per la classe `fuel`, `Individual` per la classe `seller_type`.
+Con tutti i valori a zero per una classe di attributi si ottiene: `Audi` per la classe `make`, `First Owner` per la classe `owner`, `Automatic` per la classe `transmission`, `Diesel` per la classe `fuel`, `Individual` per la classe `seller_type`.
 
 ### Training e Test sets
 
-Divido il nuovo dataset creato al punto precedente in due con rapporto 80 20 così da poter allenare il modello sulla partizione più grande (`train_set`) e poterlo poi verificare su quello piú piccolo (`test_set`).
+Divido il nuovo dataset creato al punto precedente in due con rapporto 80 20 così da poter allenare il modello sulla partizione più grande (`train_set`) e poterlo poi verificare su quello più piccolo (`test_set`).
 
-```{r split dataset in Training e Test sets}
+```{r split dataset in Train e Test sets}
 set.seed(100)
 train_ind<-sample(1:nrow(car_dummy),0.8*nrow(car_dummy))
 
@@ -717,75 +717,54 @@ print(paste("Numero righe test_set: ", nrow(test_set), sep = " "))
 
 ## Regressione lineare
 
-Per poter eseguire la regressione lineare abbiamo diverse assunzioni da fare:
+Per poter eseguire la regressione lineare abbiamo diverse assunzioni da fare che andremo in seguito a verificare:
 
--   **Linearitá** tra la variabile target e i regressori
+-   **Linearitá** tra la variabile target e i regressori;
 
--   **Omoschedasticitá**: la varianza dei residui sia omogenea
+-   **Omoschedasticitá**: la varianza dei residui sia omogenea;
 
--   **Indipendenza** tra le diverse osservazioni
+-   **Indipendenza** tra le diverse osservazioni;
 
--   **Normalitá** della distribuzione dei residui
+-   **Normalitá** della distribuzione dei residui;
 
--   Bassa **multicollinearitá**
+-   Bassa **multicollinearitá.**
 
-Andremo a verificare se queste assunzioni sono verificate per ogni modello.
+### Modello con tutti gli attributi
 
-Iniziamo quindi realizzando un modello di regressione sul `train_set` in cui considero tutte le variabili.
+Iniziamo realizzando un modello di regressione sul `train_set` in cui considero tutte le variabili.
 
 ```{r modello completo}
 modello_completo <- lm(log_selling_price ~ ., data=train_set)
 summary(modello_completo)
 ```
 
-Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `Adjusted R-squared: 0.8599`. Il problema di questo modello però è che diversi attributi sono poco significativi quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Questa cosa la verificheremo poi nella sezione successiva in cui testeremo i risultati sul test set. Inoltre alcuni degli attributi presenti sono correlati tra loro e dovremo quindi procedere a rimuoverli.
+Ciò che risulta è un modello con un valore dell'R quadro aggiustato elevato `Adjusted R-squared: 0.8587`. Il problema di questo modello però è che diversi attributi sono poco significativi quindi probabilmente il valore R alto è dovuto ad un fenomeno di overfitting. Inoltre alcuni degli attributi presenti sono correlati tra loro e dovremo quindi procedere a rimuoverli.
 
 Dalla tabella dei coefficienti si può osservare anche che gli attributi dummy che presentano la significatività maggiore sono quelli corrispondenti alle modalità più diverse dalla "modalità zero", quella che si ottiene con tutte le colonne di una certa classe uguali a zero (es. BMW e Mercedes sono le auto più simili alla marca Audi).
 
-Studiamo ora residui del modello generando i diagnostic plots.
-
-```{r plot modello completo, warning=FALSE}
-par(pty="s")
-plot(modello_completo)
-```
-
-Analizziamo separatamente i 4 diversi grafici:
-
-1.  Il primo mostra eventuali pattern non lineari nei residui che potrebbero suggerire una relazione non lineare tra target e regressori. Nel nostro caso risulta come ci si aspettava una retta orizzontale.
-
-2.  Il secondo verifica se la distribuzione dei residui é Gaussiana. Nel nostro caso per valori dei quantili teorici tra -2 e -4 c'é un allontanamento dei dati dalla retta, questo mostra un'asimmetria della distribuzione che affronteremo in seguito.
-
-3.  Il terzo verifica l'assunzione dell'omoschedasticitá. Nel nostro caso si ottiene con buona approssimazione una retta orizzontale che verifica l'assunzione.
-
-4.  Il quarto permette di trovare eventuali outliers rimasti che potrebbero modificare in modo significativo il modello. Dei nostri punti nessuno si trova oltre la Cook's distance; il più vicino è il punto 5491 che, dato che compare anche negli altri grafici, decidiamo di rimuoverlo.
-
-```{r rimuovo osservazione outlier}
-train_set <- subset(train_set, !row.names(train_set) == 5491)
-```
-
 ### Feature selection
 
-Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi presenti. Per prima cosa andiamo a rimuovere dal dataset gli attributi che presentano problemi di multicollinearitá, facciamo riferimento alla tabella delle correlazioni della sezione "Analisi delle correlazioni". Dalla tabella si puó vedere che l'attributo `log_engine_CC` é molto correlato con `log_max_power_bhp` e decidiamo dunque di rimuoverlo.
+Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi presenti. Per prima cosa andiamo a rimuovere dal dataset gli attributi che presentano problemi di multicollinearitá, facciamo riferimento alla tabella delle correlazioni della sezione "Analisi delle correlazioni". Dalla tabella si può vedere che l'attributo `log_engine_CC` è molto correlato con `log_max_power_bhp` e decidiamo dunque di rimuoverlo.
 
 ```{r rimuovo colonne seats e log_engine_CC}
 train_set <- select(train_set, -c('log_engine_CC'))
 test_set <- select(test_set, -c('log_engine_CC'))
 ```
 
-Dalla tabella delle correlazioni si puó inoltre notare come `log_max_power_bhp` e `log_age` siano i due attributi più correlati con `log_selling_price` rispettivamente con valore di `0.74` e `0.67`. Scegliamo quindi `log_max_power_bhp` come primo attributo con cui costruire il nuovo modello.
+Dalla tabella delle correlazioni si può inoltre notare come `log_max_power_bhp` e `log_age` siano i due attributi più correlati con `log_selling_price` rispettivamente con valore di `0.74` e `0.67`. Scegliamo quindi `log_max_power_bhp` come primo attributo con cui costruire il nuovo modello.
 
 ```{r primo modello con solo log_max_power_bhp}
 modello_minimo <- lm(log_selling_price ~ log_max_power_bhp, data=train_set)
 summary(modello_minimo)
 ```
 
-Come ci aspettavamo l'attributo `log_max_power_bhp` è molto significativo per la descrizione del modello con un p-value molto basso e un R quadro comunque abbastanza elevato `Adjusted R-squared:  0.4451`. Vediamo ora qui di seguito la rappresentazione grafica della retta trovata.
+Come ci aspettavamo l'attributo `log_max_power_bhp` è molto significativo per la descrizione del modello con un p-value molto basso e un R quadro comunque abbastanza elevato `Adjusted R-squared:  0.445`. Vediamo ora qui di seguito la rappresentazione grafica della retta trovata.
 
 ```{r grafico modello semplificato}
 ggplot(train_set, aes(x = log_max_power_bhp, y = log_selling_price)) + geom_point() + stat_smooth(formula = y ~ x, method = "lm", col = "red")
 ```
 
-Cerchiamo ora di raffinare il modello andando ad includere un numero maggiore di attributi. Per farlo eseguiamo un processo di forward selection; dato il grande numero di attributi presenti sfruttiamo la funzione stepAIC.
+Cerchiamo ora di raffinare il modello andando ad includere un numero maggiore di attributi. Per farlo eseguiamo un processo di forward selection. Dato il grande numero di attributi presenti sfruttiamo la funzione stepAIC.
 
 In prima battuta utilizziamo il `modello_minimo` appena realizzato, settiamo `direction = "both"` e indichiamo come scope il `modello_completo`.
 
@@ -798,26 +777,17 @@ modello_stepAIC <- stepAIC(modello_minimo, direction = "both", scope = formula(m
 summary(modello_stepAIC)
 ```
 
-Il processo di stepAIC ha portato all'esclusione di 2 attributi: `makeBMW` e `seller_typeTrustmark.Dealer`. Questo ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8589`, cioè praticamente identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance.
-
-Andiamo allora a graficare le caratteristiche di questo nuovo modello.
-
-```{r plot modello stepAIC, warning=FALSE}
-par(pty="s")
-plot(modello_stepAIC)
-```
-
-I grafici risultano molto simili a quelli del modello completo presentando lo stesso problema nel Normal Q-Q.
+Il processo di stepAIC ha portato all'esclusione di 2 attributi: `makeBMW` e `seller_typeTrustmark.Dealer`. Questo ha portato il valore dell'R quadro aggiustato a `Adjusted R-squared:  0.8577`, cioè praticamente identico a quello iniziale. Togliendo quelle colonne abbiamo quindi alleggerito il modello senza perdere di performance.
 
 Per ridurre ulteriormente il numero di attributi da cui è composto il modello è possibile procedere in due modi:
 
--   selezionare una diversa "modalitá nulla" che abbia un maggior numero di attributi simili (es. una marca che faccia auto in una fascia di prezzo inferiore rispetto ad Audi)
+-   selezionare una diversa "modalità nulla" che abbia un maggior numero di attributi simili (es. una marca che faccia auto in una fascia di prezzo inferiore rispetto ad Audi)
 
 -   ricorrere nuovamente ad utilizzare la funzione stepAIC settando il parametro k, che limita la significatività dei parametri, ad un valore corrispondente a `0.001`.
 
 Ricorriamo a questa seconda opzione utilizzando la funzione `qchisq` per calcolare il parametro k.
 
-```{r modello stepAIC con parametro k, include=FALSE, results='hide'}
+```{r modello stepAIC con parametro k, include=FALSE}
 k_value <- qchisq(0.001, 1, lower.tail = F)
 modello_stepAIC_k <- stepAIC(modello_minimo, direction = "both", scope = formula(modello_completo), k = k_value)
 ```
@@ -826,60 +796,72 @@ modello_stepAIC_k <- stepAIC(modello_minimo, direction = "both", scope = formula
 summary(modello_stepAIC_k)
 ```
 
-Risultano quindi esclusi dal modello 8 degli attributi iniziali, il modello è ora composto da 23 attributi molto significativi. Il valore dell'R quadro aggiustato é `Adjusted R-squared:  0.8568`, cioè praticamente identico a quello individuato in precedenza.
+Risultano quindi esclusi dal modello 8 degli attributi iniziali, il modello è ora composto da 23 attributi molto significativi. Il valore dell'R quadro aggiustato è `Adjusted R-squared: 0.8557`, cioè praticamente identico a quello individuato in precedenza.
 
-Anche in questo caso andiamo a mostrare i grafici dei residui del modello trovato.
+### Confronto modelli trovati
 
-```{r plot modello stepAIC con parametro k, warning=FALSE}
-par(pty="s")
-plot(modello_stepAIC_k)
-```
-
-I grafici dei residui anche in questo caso risultano abbastanza buoni. La forma anomala del Normal Q-Q indica una asimmetria della distribuzione; questo è probabilmente dovuto alla non perfetta normalità delle variabili considerate.
-
-Nonostante il modello descriva bene i dati potrebbe essere molto migliore se ci fosse una variabile riferita allo stato dell'auto, questo infatti è uno dei parametri che maggiormente può influenzare il costo di un'auto usata.
-
-Utilizzando ora la funzione `anova` confrontiamo il modello ottenuto con la funzione stepAIC e quello ottenuto dal processo di stepAIC con parametro k per vedere se la rimozione degli attributi meno significativi con l'uso del parametro k è giustificata.
-
-```{r confronto modello_completo con modello_stepAIC_k}
-anova(modello_completo, modello_stepAIC_k)
-```
+Utilizzando ora la funzione `anova` confrontiamo il modello ottenuto con la funzione stepAIC e quello ottenuto dal processo di stepAIC con parametro k per vedere se la rimozione degli attributi meno significativi è giustificata.
 
 ```{r confronto modello_stepAIC con modello_stepAIC_k}
-anova(modello_stepAIC, modello_stepAIC_k)
+anova(modello_stepAIC_k, modello_stepAIC)
 ```
 
-La funzione anova prenderà gli oggetti del modello come argomenti e restituirà un ANOVA che verifica se il modello più complesso (modificato dallo stepAIC k) è significativamente migliore nell'acquisizione dei dati rispetto al modello più semplice (modello con lo stepAIC). Se il p-value risultante è sufficientemente basso (di solito inferiore a 0,05), concludiamo che il modello più complesso è significativamente migliore del modello più semplice. Se il p-value è maggiore di 0,05, dovremmo privilegiare il modello più semplice (stepAIC). Nel nostro caso inoltre il p-value è sicuramente più basso rispetto a 0,05 per cui il modello nuovo è sicuramente migliore e tenderemo a privilegiare quest'ultimo. In sostanza se il p-value è minore del livello di significatività scelto (solitamente pari a 0,05) allora si può concludere che il modello fornisce un adattamento migliore ai dati.
+La differenza tra il modello ottenuto dalla funzione stepAIC con e senza il valore k è di 6 gradi di libertà. Andando però a valutare il p-value complessivo di questi attributi il loro contributo sembra essere molto significativo. Infatti il valore è di molto inferiore a 0,05 e ci porta ad affermare che il modello più complesso è significativamente migliore del modello più semplice, cioé fornisce un adattamento migliore ai dati.
 
-La statistica F è semplicemente un rapporto di due varianze. Le varianze sono una misura della dispersione, ovvero quanto i dati sono dispersi dalla media. Valori maggiori rappresentano una dispersione maggiore. Se le osservazioni per ciascun gruppo sono vicine alla media del gruppo, la varianza all'interno dei campioni è bassa. Tuttavia, se le osservazioni per ciascun gruppo sono più lontane dalla media del gruppo, la varianza all'interno dei campioni è maggiore. Nel nostro caso abbiamo una f-test di 13,8 per cui non è un valore eccessivamente elevato anche se in generale, una statistica F è un rapporto di due quantità che dovrebbero essere approssimativamente uguali nell'ipotesi nulla, che produce una statistica F di circa 1.
+La funzione anova restituisce inoltre il valore di F che corrisponde al rapporto delle varianze dei due modelli. Le varianze sono una misura della dispersione delle osservazioni dalla media. La statistica F è un rapporto di due quantità che dovrebbero essere approssimativamente uguali nell'ipotesi nulla, che produce una statistica F di circa 1. Nel nostro caso abbiamo una f-test di 13,8 che ci indica una miglior varianza del modello con più attributi.
 
-### Calcolo dell'RMSE per il modello stepAIC e per il modello stepAIC k 
+### Analisi residui
 
-```{r valutazione dell'rmse nel caso dei due modelli applicati}
+In questa sezione andiamo a studiare i residui del `modello_stepAIC` generando i diagnostic plots.
+
+```{r plot modello stepAIC, warning=FALSE}
+par(pty="s")
+plot(modello_stepAIC)
+```
+
+Analizziamo separatamente i 4 diversi grafici:
+
+1.  Il primo mostra eventuali pattern non lineari nei residui che potrebbero suggerire una relazione non lineare tra target e regressori. Nel nostro caso risulta come ci si aspettava una retta orizzontale.
+
+2.  Il secondo verifica se la distribuzione dei residui è Gaussiana. Nel nostro caso per valori dei quantili teorici tra -2 e -4 c'è un allontanamento dei dati dalla retta, questo mostra un'asimmetria della distribuzione che affronteremo qui di seguito.
+
+3.  Il terzo verifica l'assunzione dell'omoschedasticitá. Nel nostro caso si ottiene con buona approssimazione una retta orizzontale che verifica l'assunzione.
+
+4.  Il quarto permette di trovare eventuali outliers rimasti che potrebbero modificare in modo significativo il modello. Dei nostri punti nessuno si trova oltre la Cook's distance.
+
+L'anomalia del Normal Q-Q plot indica una asimmetria della distribuzione. Questo è probabilmente dovuto alla mancanza di una variabile nel calcolo del costo di un'auto. Infatti, nonostante il modello descriva bene i dati, potrebbe essere molto migliore se ci fosse una variabile riferita allo stato dell'auto; questo infatti è uno dei parametri che maggiormente può influenzare il costo di un'auto usata. In particolare presumiamo vengono sovrastimati i prezzi dei veicoli che presentano buone caratteristiche sulla carta ma che presentano dei danni.
+
+```{r verifico outlier}
+car_noduplicati_nodrop[row.names(car_noduplicati_nodrop) == 5491,]
+```
+
+Analizziamo ad esempio l'osservazione 5491 che è quella che si discosta maggiormente, corrisponde ad una Volkswagen Polo 1.5 TDI Comfortline venduta a 2600\$. Confrontandola con le altre righe nel database che corrispondono a questo modello di auto vediamo che hanno tutte prezzi maggiori nonostante siano più vecchie e con più km, questa cosa ci fa pensare quindi che si tratti di un'auto incidentata o seriamente danneggiata.
+
+```{r veirifico il costo delle altre Volkswagen Polo 1.5 TDI Comfortline}
+car_noduplicati_nodrop[car_noduplicati_nodrop$name == 'Volkswagen Polo 1.5 TDI Comfortline',]
+```
+
+# Analisi predittiva
+
+In questa sezione andiamo ad analizzare le capacità predittive del nostro modello applicandolo al `test_set`. In primo luogo andiamo a controllare il valore dell'R quadro che ci restituisce.
+
+```{r predizione sul test set}
 lm_pred <- predict(modello_stepAIC, newdata = test_set %>% select(-log_selling_price))
-# RMSE of train dataset
-RMSE(pred = modello_stepAIC$fitted.values, obs = train_set$log_selling_price)
-# RMSE of test dataset
-RMSE(pred = lm_pred, obs = test_set$log_selling_price)
-
-######## qui valutazione dell'rmse del modello stepAIC k con meno variabili
-
-lm_pred2 <- predict(modello_stepAIC_k, newdata = test_set %>% select(-log_selling_price))
-
-# RMSE of train dataset
-RMSE(pred = modello_stepAIC_k$fitted.values, obs = train_set$log_selling_price)
-# RMSE of test dataset
-RMSE(pred = lm_pred2, obs = test_set$log_selling_price)
-
-
-
-
-
 R2(lm_pred, test_set$log_selling_price)
-R2(lm_pred2, test_set$log_selling_price)
 ```
 
-Il valore RMSE (errore quadratico medio, Root Mean Squared Error) è una misura di errore assoluta in cui le deviazioni vengono elevate al quadrato per evitare che valori positivi e negativi possano annullarsi l'uno con l'altro. Con questa misura, inoltre, gli errori di valore maggiore vengono amplificati, caratteristica che può agevolare l'eliminazione dei metodi che presentano gli errori più significativi. L'RMSE è migliore del MAE (errore medio assoluto) perchè come detto poco prima l'RMSE eleva al quadrato la differenza tra i valori effettivi e i valori previsti, il che significa che la previsione con un errore maggiore sarà notevolmente penalizzata. Più basso è il valore dell'RMSE e migliore è il modello rappresentato. Nel nostro caso i valori dell'RMSE calcolati per entrambi i modelli, sia sul training test che sul test set, danno risultati praticamente identici per cui possiamo affermare che i modelli sono molto buoni nel predire il test set.
+Il valore di R quadro che si ottiene è praticamente identico a quello ottenuto sul `train_set` che era di `0.8557`, ciò significa che il modello è buono e predice bene i risultati.
+
+Valutiamo ora anche il Root Mean Squared Error, cioè la misura di errore assoluta con le deviazioni elevate al quadrato. Più basso è il valore dell'RMSE e migliore è il modello rappresentato.
+
+```{r valutazione RMSE}
+RMSE(pred = modello_stepAIC$fitted.values, obs = train_set$log_selling_price)  # RMSE of train dataset
+RMSE(pred = lm_pred, obs = test_set$log_selling_price)                         # RMSE of test dataset
+```
+
+Nel nostro caso i valori dell'RMSE calcolati per entrambi i modelli, sia sul `train_test` che sul `test_set`, sono bassi e risultano praticamente identici per cui possiamo affermare che il modello è buono e non ha overfittato il `train_set`.
+
+Il valore RMSE (errore quadratico medio, Root Mean Squared Error) è una misura di errore assoluta in cui le deviazioni vengono elevate al quadrato per evitare che valori positivi e negativi possano annullarsi l'uno con l'altro. Con questa misura, inoltre, gli errori di valore maggiore vengono amplificati, caratteristica che può agevolare l'eliminazione dei metodi che presentano gli errori più significativi. L'RMSE è migliore del MAE (errore medio assoluto) perchè come detto poco prima l'RMSE eleva al quadrato la differenza tra i valori effettivi e i valori previsti, il che significa che la previsione con un errore maggiore sarà notevolmente penalizzata. Più basso è il valore dell'RMSE e migliore è il modello rappresentato.
 
 ### Linearità
 
@@ -888,8 +870,6 @@ linearità<- data.frame(residual = modello_stepAIC_k$residuals, fitted = modello
 
 linearità %>% ggplot(aes(fitted, residual)) + geom_point() + geom_smooth() + geom_hline(aes(yintercept = 0)) + 
     theme(panel.grid = element_blank(), panel.background = element_blank())
-
-
 ```
 
 Controllo la linearità del modello dello stepAIC k perchè la regressione lineare è un modello parametrico, il che significa che per creare un'equazione, il modello segue alcune ipotesi classiche. La regressione lineare che non segue questa assunzione può essere fuorviante o semplicemente ha uno stimatore distorto. Per questa sezione, controlliamo solo il secondo modello. Il modello di regressione lineare presuppone che esista una relazione lineare tra i predittori e la risposta. Se la vera relazione è tutt'altro che lineare, allora praticamente tutte le conclusioni che traiamo dall'adattamento sono sospette. Inoltre, l'accuratezza della previsione del modello può essere notevolmente ridotta. I grafici residui sono un utile strumento grafico per identificare la non linearità. Se c'è un pattern nel grafico residuo, significa che il modello può essere ulteriormente migliorato o che non soddisfa l'ipotesi di linearità. Il grafico mostra la relazione tra i residui/errori con i valori previsti e come il grafico fa notare la linearità viene accettata
@@ -899,8 +879,6 @@ Controllo la linearità del modello dello stepAIC k perchè la regressione linea
 ```{r autocorrelazione}
 library(car)
 durbinWatsonTest(modello_stepAIC_k)
-
-
 ```
 
 Applicando il test dell'autocorrelazione si nota che gli errori standard calcolati per i coefficienti di regressione stimati o i valori adattati si basano sull'assunzione di termini di errore non correlati, ossia nessuna autocorrelazione. Se infatti ci fosse correlazione tra i termini di errore, allora gli errori standard stimati tenderebbero a sottostimare i veri errori standard. Di conseguenza, gli intervalli di confidenza e previsione saranno più ristretti di quanto dovrebbero essere. Al momento si assume che l'ipotesi nulla sia che non c'è autocorrelazione. Qui si può notare che nel modello utilizzato per l'applicazione del modello D-W si ha un valore di 2 per cui non è presente autocorrelazione. Nei casi in cui si trovano valori molto inferiori a 2 allora siamo in presenza di autocorrelazione.
@@ -909,9 +887,7 @@ Applicando il test dell'autocorrelazione si nota che gli errori standard calcola
 
 ```{r eteroschedasticità}
 library(lmtest)
-bptest(modello_stepAIC_k$model)
-linearità%>% ggplot(aes(fitted, residual)) + geom_point() + theme_light() + geom_hline(aes(yintercept = 0))
-
+bptest(modello_stepAIC_k)
 ```
 
 Applico il test dell'eteroschedasticità per valutare che le varianze dei termini di errore non sono costanti. Si possono identificare varianze non costanti negli errori dalla presenza di una forma ad imbuto nel grafico residuo, lo stesso con quello di linearità. In questo caso affinchè il test dell'eteroschedasticità sia negativo il p-value deve essere minore di 0.05 per cui in questo caso il nostro modello non presenta il problema dell'eteroschedasticità e assumendo come ipotesi nulla quella della non presenza dell'eteroschedasticità accetteremo la stessa.
@@ -920,7 +896,6 @@ Applico il test dell'eteroschedasticità per valutare che le varianze dei termin
 
 ```{r multicollinearità}
 vif(modello_stepAIC_k)
-
 ```
 
 Per multicollinearità si intende una correlazione tra le variabili/predittori indipendenti. Affinchè non sia presente multicollinearità tra le variabili i valori devono essere al di sotto del valore 5. Nel modello preso in considerazione non vi sono valori uguali o superiori a 5 per cui non ci sono problemi di multicollinearità per cui accetto i valori ottenuti.
