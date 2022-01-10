@@ -543,18 +543,18 @@ Sono presenti 1183 righe che descrivono auto uguali, dello stesso anno, con gli 
 ```{r rimuovo righe ripetute e grafico distribuzione selling_price}
 car_noduplicati <- distinct(car)
 
-plot1 <- car %>% ggplot()+geom_histogram(aes(log_selling_price, ..density..), bins = 30, )+geom_density(aes(log_selling_price))+ggtitle('Selling_price con righe duplicate')+xlab('Selling Price')+ylab('Densità')
+plot1 <- car %>% ggplot()+geom_histogram(aes(log_selling_price, ..density..), bins = 30, )+geom_density(aes(log_selling_price))+ggtitle('Istogramma con righe duplicate')+xlab('Selling Price (log10)')+ylab('Densità')
 
-plot2 <- car_noduplicati %>% ggplot()+geom_histogram(aes(log_selling_price, ..density..), bins = 30, )+geom_density(aes(log_selling_price))+ggtitle('Selling_price senza righe ripeture')+xlab('Selling Price')+ylab('Densità')
+plot2 <- car_noduplicati %>% ggplot()+geom_histogram(aes(log_selling_price, ..density..), bins = 30, )+geom_density(aes(log_selling_price))+ggtitle('Istogramma senza righe duplicate')+xlab('Selling Price (log10)')+ylab('Densità')
 
-plot3 <- ggplot(car, aes(sample = log_selling_price)) + stat_qq() + stat_qq_line(col = "red")+ggtitle('Normal Q-Q Plot con righe duplicate')+xlab('Theoretical Quantiles')+ylab('Sample Quantiles')
+plot3 <- ggplot(car, aes(sample = log_selling_price)) + stat_qq() + stat_qq_line(col = "red")+ggtitle('Normal Q-Q con righe duplicate')+xlab('Theoretical Quantiles')+ylab('Sample Quantiles')
 
-plot4 <- ggplot(car_noduplicati, aes(sample = log_selling_price)) + stat_qq() + stat_qq_line(col = "red")+ggtitle('Normal Q-Q Plot senza righe duplicate')+xlab('Theoretical Quantiles')+ylab('Sample Quantiles')
+plot4 <- ggplot(car_noduplicati, aes(sample = log_selling_price)) + stat_qq() + stat_qq_line(col = "red")+ggtitle('Normal Q-Q senza righe duplicate')+xlab('Theoretical Quantiles')+ylab('Sample Quantiles')
 
 grid.arrange(plot1, plot3, plot2, plot4, ncol = 2)
 ```
 
-Rimuovendo le righe duplicate si vede anche un miglioramento nella distribuzione della variabile `log_selling_price`. Anche il Normal Q-Q Plot é migliorato anche se le code risultano comunque un po' più spesse della distribuzione normale.
+Rimuovendo le righe duplicate si vede anche un miglioramento nella distribuzione della variabile `log_selling_price`. Anche il Normal Q-Q Plot è migliorato anche se le code risultano comunque un po' più spesse della distribuzione normale.
 
 ### Categorie poco rappresentate
 
@@ -700,7 +700,7 @@ Cerchiamo ora di raffinare il modello andando ad includere un numero maggiore di
 
 In prima battuta utilizziamo il `modello_minimo` appena realizzato, settiamo `direction = "both"` e indichiamo come scope il `modello_completo`.
 
-```{r modello stepAIC, results='hide'}
+```{r modello stepAIC, include=FALSE, results='hide'}
 modello_completo <- lm(log_selling_price ~ ., data=train_set) #ricalcolo il modello perché ho rimosso la colonna log_engine_CC
 modello_stepAIC <- stepAIC(modello_minimo, direction = "both", scope = formula(modello_completo))
 ```
@@ -752,7 +752,7 @@ plot1 <- qplot(.fitted, .resid, data = modello_stepAIC) + geom_hline(yintercept 
 
 plot2 <- qplot(sample =.stdresid, data = modello_stepAIC, stat = "qq") + geom_abline(col = "red")+ggtitle('Normal Q-Q Plot')+ylab('Standardized Residuals')+xlab('Theoretical Quantiles') + geom_text(aes(label = '5491'), x=-3, y=-6.3)
 
-plot3 <- qplot(.fitted, sqrt(abs(.stdresid)), data = modello_stepAIC) + geom_hline(yintercept = 1) + geom_smooth(se = FALSE,col = "red") +ggtitle('Scale - Location')+xlab('Fitted values')+ylab(expression(sqrt(abs(' Standardized residuals '))))
+plot3 <- qplot(.fitted, sqrt(abs(.stdresid)), data = modello_stepAIC) + geom_hline(yintercept = 1) + geom_smooth(se = FALSE,col = "red") +ggtitle('Scale - Location')+xlab('Fitted values')+ylab(expression(sqrt(abs('Standardized residuals '))))
 
 plot4 <- qplot(.hat, .stdresid, data = modello_stepAIC) + geom_smooth(se = FALSE,col = "red")+ggtitle('Residuals vs Leverage')+xlab('Leverage')+ylab('Standardized residuals') + geom_hline(yintercept = 0)
 
@@ -799,4 +799,4 @@ RMSE(pred = modello_stepAIC$fitted.values, obs = train_set$log_selling_price)  #
 RMSE(pred = lm_pred, obs = test_set$log_selling_price)                         # RMSE of test dataset
 ```
 
-Nel nostro caso i valori dell'RMSE calcolati per entrambi i modelli, sia sul `train_test` che sul `test_set`, sono bassi e risultano praticamente identici per cui possiamo affermare che il modello è buono e non ha overfittato il `train_set`.
+Nel nostro caso i valori dell'RMSE calcolati per entrambi i modelli, sia sul `train_test` che sul `test_set`, sono bassi e risultano praticamente identici per cui possiamo affermare che il modello è buono e nonostante l'alto numero di attributi non ha overfittato il `train_set`.
