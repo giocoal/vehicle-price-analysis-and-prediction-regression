@@ -2,20 +2,16 @@
 title: "Probability and statistics project: dataset prezzi auto usate"
 author: "Carbone Giorgio, Scuri Gianluca, Gazzola Michele"
 date: "09/01/2021"
-output:
-  html_document: default
-  pdf_document: default
+output: github_document
 ---
 
 # Importazione librerie
 
 ```{r importazione librerie e opzioni di rendering, warning=FALSE, include=FALSE}
-library(MASS)
 library(readr)
 library(tibble)
 library(dplyr)
 library(stringr)
-library(mice)
 library(caret)
 library(ggcorrplot)
 library(GGally) #Per il ggcorr()
@@ -27,6 +23,8 @@ library(glmnet)
 library(xgboost)
 library(ggplot2)
 library(gridExtra)
+library(MASS)
+library(mice)
 ```
 
 # Lettura Dataset
@@ -52,7 +50,7 @@ L'obiettivo di analisi consiste nella definizione di un modello di regressione l
 -   L'attributo torque, in quanto calcolato a rpm diversi per ogni veicolo/marca, lo escludiamo dall'analisi
 
 ```{r rimozione colonna torque e mileage}
-car <- select(car, -c(torque,mileage))
+car <- dplyr::select(car, -c(torque,mileage))
 head(car)
 ```
 
@@ -70,7 +68,7 @@ Conversione della variabile `year` (anno di produzione) in `age` (anni di vita d
 
 ```{r conversione year in age}
 car <- add_column(car, age = 2021 - car$year, .after = "year")
-car <- select(car, -c("year"))
+car <- dplyr::select(car, -c("year"))
 ```
 
 #### Introduzione di NA per l'attributo max_power
@@ -99,7 +97,7 @@ Entrambi risultano TRUE, questo significa che le unità di misura sono consisten
 ```{r Eliminazione unità di misura}
 car['engine_CC'] <- parse_number(car$engine)
 car['max_power_bhp'] <- parse_number(car$max_power)
-car <- select(car, -c('engine', 'max_power'))
+car <- dplyr::select(car, -c('engine', 'max_power'))
 ```
 
 #### Creazione di una colonna contenente la marca dell'auto
@@ -140,7 +138,7 @@ Creiamo un subset del dataset contenente le sole variabili quantitative
 ```{r Estrazione delle variabili numeriche}
 car_nums_colnames <- unlist(lapply(car, is.numeric))
 car_num <- car[ , car_nums_colnames]
-car_num <- select(car_num, -c('seats'))
+car_num <- dplyr::select(car_num, -c('seats'))
 ```
 
 Osserviamo i valori minimi e massimi per ogni attributo quantitativo
@@ -160,7 +158,7 @@ for (i in names(car_num)) {
 par(mfrow=c(1,1))
 ```
 
-Tutte le variabili presentano un numero elevato di sospetti outliers. In particolare, tutte le variabili presentano un certo numero di osservazioni classificate come potenziali valori anomali perchè si trovano al di sopra del baffo superiore del boxplot, la cui posizione è definita come $q_{0.75} + 1.5 \cdot IQR$ , dove IQR è il range interquartile. Proviamo a escludere dai potenziali outlier i *mild outlier* e andiamo invece solo a considerare gli *extreme outlier*, aumentando il range di osservazioni incluse nei baffi del boxplot da$I = [q_{0.25} - 1.5 \cdot IQR; q_{0.75} + 1.5 \cdot IQR]$ a $I = [q_{0.25} - 3 \cdot IQR; q_{0.75} + 3 \cdot IQR]$
+Tutte le variabili presentano un numero elevato di sospetti outliers. In particolare, tutte le variabili presentano un certo numero di osservazioni classificate come potenziali valori anomali perchè si trovano al di sopra del baffo superiore del boxplot, la cui posizione è definita come $q\_{0.75} + 1.5 \\cdot IQR$ , dove IQR è il range interquartile. Proviamo a escludere dai potenziali outlier i *mild outlier* e andiamo invece solo a considerare gli *extreme outlier*, aumentando il range di osservazioni incluse nei baffi del boxplot da$I = [q\_{0.25} - 1.5 \\cdot IQR; q\_{0.75} + 1.5 \\cdot IQR]$ a $I = [q\_{0.25} - 3 \\cdot IQR; q\_{0.75} + 3 \\cdot IQR]$
 
 Inoltre, dato che gli outlier sono solo osservazioni che si trovano al di sopra del baffo superiore dei boxplot, proviamo ad applicare una trasformazione logaritmica.
 
@@ -481,7 +479,7 @@ Il valore dell'indice di connessione, maggiore di zero, suggerisce la presenza d
 
 ## Analisi delle correlazioni
 
-Visualizzo possibili correlazioni osservando i *pair plots* (diagrammi a dispersione accoppiati) tra le variabili quantitative.\
+Visualizzo possibili correlazioni osservando i *pair plots* (diagrammi a dispersione accoppiati) tra le variabili quantitative.
 Al fine di rendere più agile la rappresentazione grafica viene selezionato tramite *simple random sampling* un campione di 500 unità statistiche del dataset originale.
 
 ```{r correlazioni}
@@ -539,7 +537,7 @@ sum(duplicated(car))
 
 Sono presenti 1183 righe che descrivono auto uguali, dello stesso anno, con gli stessi km e prezzo. La cosa è sospetta ed inoltre queste righe non possono riferirsi alla stessa auto rivenduta più volte altrimenti cambierebbe il campo `owner`. Probabilmente per la maggior parte delle righe è dovuto ad un cattivo inserimento dei dati, per questo decidiamo di rimuoverle.
 
-```{r rimuovo righe ripetute e grafico distribuzione selling_price}
+```{r distribuzione selling_price}
 car_noduplicati <- distinct(car)
 
 plot1 <- car %>% ggplot()+geom_histogram(aes(log_selling_price, ..density..), bins = 30, )+geom_density(aes(log_selling_price))+ggtitle('Istogramma con righe duplicate')+xlab('Selling Price (log10)')+ylab('Densità')
@@ -678,8 +676,8 @@ Dalla tabella dei coefficienti si può osservare anche che gli attributi dummy c
 Cerchiamo ora di ridurre il numero di attributi necessari per aumentare l'interpretabilità e tentare di ridurre i problemi presenti. Per prima cosa andiamo a rimuovere dal dataset gli attributi che presentano problemi di multicollinearitá, facciamo riferimento alla tabella delle correlazioni della sezione "Analisi delle correlazioni". Dalla tabella si può vedere che l'attributo `log_engine_CC` è molto correlato con `log_max_power_bhp` e decidiamo dunque di rimuoverlo.
 
 ```{r rimuovo colonne seats e log_engine_CC}
-train_set <- select(train_set, -c('log_engine_CC'))
-test_set <- select(test_set, -c('log_engine_CC'))
+train_set <- dplyr::select(train_set, -c('log_engine_CC'))
+test_set <- dplyr::select(test_set, -c('log_engine_CC'))
 ```
 
 Dalla tabella delle correlazioni si può inoltre notare come `log_max_power_bhp` e `log_age` siano i due attributi più correlati con `log_selling_price` rispettivamente con valore di `0.74` e `0.67`. Scegliamo quindi `log_max_power_bhp` come primo attributo con cui costruire il nuovo modello.
@@ -774,7 +772,7 @@ L'anomalia del Normal Q-Q plot indica una asimmetria della distribuzione. Questo
 car_noduplicati_nodrop[row.names(car_noduplicati_nodrop) == 5491,]
 ```
 
-Analizziamo ad esempio l'osservazione 5491 nel qq Plot che è quella che si discosta maggiormente, corrisponde ad una Volkswagen Polo 1.5 TDI Comfortline venduta a 2600\$. Confrontandola con le altre righe nel database che corrispondono a questo modello di auto vediamo che hanno tutte prezzi maggiori nonostante siano più vecchie e con più km, questa cosa ci fa pensare quindi che si tratti di un'auto incidentata o seriamente danneggiata.
+Analizziamo ad esempio l'osservazione 5491 nel qq Plot che è quella che si discosta maggiormente, corrisponde ad una Volkswagen Polo 1.5 TDI Comfortline venduta a 2600$. Confrontandola con le altre righe nel database che corrispondono a questo modello di auto vediamo che hanno tutte prezzi maggiori nonostante siano più vecchie e con più km, questa cosa ci fa pensare quindi che si tratti di un'auto incidentata o seriamente danneggiata.
 
 ```{r veirifico il costo delle altre Volkswagen Polo 1.5 TDI Comfortline}
 car_noduplicati_nodrop[car_noduplicati_nodrop$name == 'Volkswagen Polo 1.5 TDI Comfortline',]
@@ -785,7 +783,7 @@ car_noduplicati_nodrop[car_noduplicati_nodrop$name == 'Volkswagen Polo 1.5 TDI C
 In questa sezione andiamo ad analizzare le capacità predittive del nostro modello applicandolo al `test_set`. In primo luogo andiamo a controllare il valore dell'R quadro che ci restituisce.
 
 ```{r predizione sul test set}
-lm_pred <- predict(modello_stepAIC, newdata = test_set %>% select(-log_selling_price))
+lm_pred <- predict(modello_stepAIC, newdata = test_set %>% dplyr::select(-log_selling_price))
 R2(lm_pred, test_set$log_selling_price)
 ```
 
