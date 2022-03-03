@@ -17,6 +17,7 @@ bin-release/
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
 .Rproj.user
+Info_e_Simulazione_Progetto
 .Rhistory
 .RData
 car.HTML
@@ -28,7 +29,6 @@ car_files/figure-latex/pressure-1.pdf
 .Rproj.user/BD6D6FF3/sources/per/t/443A69BB-contents
 .Rproj.user/BD6D6FF3/sources/per/t/443A69BB
 .Rproj.user/BD6D6FF3/sources/per/t/443A69BB-contents
-Info_e_Simulazione_Progetto
 *.pper
 .Rproj.user/BD6D6FF3/pcs/windowlayoutstate.pper
 .Rproj.user/BD6D6FF3/pcs/source-pane.pper
