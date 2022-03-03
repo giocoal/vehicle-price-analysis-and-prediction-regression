@@ -1,7 +1,6 @@
-Probability and statistics project: dataset prezzi auto usate
+Progetto di Foundations of Probability and Statistics: Statistica descrittiva e regressione lineare multipla su Vehicle Dataset
 ================
 Carbone Giorgio, Scuri Gianluca, Gazzola Michele
-09/01/2021
 
 # Importazione librerie
 
