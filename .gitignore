@@ -3,9 +3,11 @@ bin-debug/
 bin-release/
 [Oo]bj/
 [Bb]in/
+Info_e_Simulazione_Progetto/
 
 # Other files and folders
 .settings/
+
 
 # Executables
 *.swf
@@ -17,7 +19,7 @@ bin-release/
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
 .Rproj.user
-Info_e_Simulazione_Progetto/
+
 .Rhistory
 .RData
 car.HTML
