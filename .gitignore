@@ -31,6 +31,5 @@ car_files/figure-latex/pressure-1.pdf
 *.pper
 .Rproj.user/BD6D6FF3/pcs/windowlayoutstate.pper
 .Rproj.user/BD6D6FF3/pcs/source-pane.pper
-.Rhistory
+.Rhistory/
 .RData
-.Rhistory
