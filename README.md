@@ -1,5 +1,4 @@
 # Informazioni sulle cartelle progetto
-Info_e_Simulazione_progetto 
-Car details v3.csv -> è il dataset <br />
-Prog_Dir.Rproj -> Progetto di Rstudio <br />
-car.Rmd -> è il markdown del progetto <br />
+
+L'obiettivo di analisi consiste nella definizione di un modello di regressione lineare multipla che permetta di predire il prezzo di vendita di un'automobile usata.
+Il dataset utilizzato è 'Vehicle Dataset': [https://www.kaggle.com/nehalbirla/vehicle-dataset-from-cardekho|kaggle]
