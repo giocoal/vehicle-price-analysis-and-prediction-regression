@@ -1,6 +1,13 @@
 # Statistica descrittiva e regressione lineare multipla, con R, su Vehicle Dataset
 ### Progetto per il corso di Foundations of Probability and Statistics
 
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+[![LinkedIn][linkedin-shield]][linkedin-url]
+
 L'obiettivo di analisi consiste nella definizione di un **modello di regressione lineare multipla** che permetta di **predire il prezzo di vendita di un'automobile usata**. <br/>
 Il dataset utilizzato è [Vehicle Dataset](https://www.kaggle.com/nehalbirla/vehicle-dataset-from-cardekho).
 
