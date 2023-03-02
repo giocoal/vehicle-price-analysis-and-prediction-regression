@@ -1,4 +1,4 @@
-# Descriptive statistics and multiple linear regression, with R, on Vehicle Dataset
+# Descriptive Statistics and Multiple Linear Regression, with R, on Vehicle Dataset
 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
